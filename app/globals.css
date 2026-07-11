@@ -6,49 +6,49 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
 
-  --color-background: #FAF6F0;
+  --color-background: #FAF8F4;
   --color-surface: #FFFFFF;
-  --color-surface-muted: #F3ECE1;
-  --color-border: #E7DCCB;
-  --color-divider: #ECE3D4;
-  --color-text-primary: #3A2E22;
-  --color-text-secondary: #6B5D4C;
-  --color-text-muted: #9A8B75;
-  --color-accent: #B98A5E;
-  --color-accent-soft: #F1E3D0;
-  --color-accent-strong: #8C6239;
-  --color-badge-bg: #F6EEE0;
-  --color-badge-border: #E4D3B8;
-  --color-badge-text: #7A5C3A;
-  --color-search-background: #F3ECE1;
-  --color-danger: #B5543F;
-  --color-danger-soft: #F6E2DC;
-  --color-success: #5F7A52;
-  --color-warning: #C08A3E;
-  --color-warning-soft: #F6E7CD;
+  --color-surface-muted: #F4EFE6;
+  --color-border: #E6DFD1;
+  --color-divider: #EDE8DD;
+  --color-text-primary: #3A342C;
+  --color-text-secondary: #6E6656;
+  --color-text-muted: #9C927E;
+  --color-accent: #A68965;
+  --color-accent-soft: #EFE7D9;
+  --color-accent-strong: #87694A;
+  --color-badge-bg: #F3EEE2;
+  --color-badge-border: #E0D6C2;
+  --color-badge-text: #786A52;
+  --color-search-background: #F4EFE6;
+  --color-danger: #B0574A;
+  --color-danger-soft: #F5E4DF;
+  --color-success: #5F7A5C;
+  --color-warning: #B98C4C;
+  --color-warning-soft: #F3E8D3;
 }
 
 .dark {
-  --color-background: #211B15;
-  --color-surface: #2A2219;
-  --color-surface-muted: #332A1F;
-  --color-border: #443826;
-  --color-divider: #3A3122;
-  --color-text-primary: #F3EADC;
-  --color-text-secondary: #CBB99E;
-  --color-text-muted: #8F7E67;
-  --color-accent: #D6A876;
-  --color-accent-soft: #3D2F1F;
-  --color-accent-strong: #EFC79A;
-  --color-badge-bg: #38301F;
-  --color-badge-border: #4E4128;
-  --color-badge-text: #E4C79C;
-  --color-search-background: #332A1F;
-  --color-danger: #E08268;
-  --color-danger-soft: #3E241D;
-  --color-success: #8FAE7C;
-  --color-warning: #E0B063;
-  --color-warning-soft: #3D3016;
+  --color-background: #211D17;
+  --color-surface: #2A251E;
+  --color-surface-muted: #332D23;
+  --color-border: #43392A;
+  --color-divider: #393226;
+  --color-text-primary: #F1EADD;
+  --color-text-secondary: #CABBA1;
+  --color-text-muted: #8C806C;
+  --color-accent: #CBAA80;
+  --color-accent-soft: #3C3222;
+  --color-accent-strong: #E9CBA3;
+  --color-badge-bg: #38311F;
+  --color-badge-border: #4C4029;
+  --color-badge-text: #E1C79E;
+  --color-search-background: #332D23;
+  --color-danger: #DB8672;
+  --color-danger-soft: #3D251E;
+  --color-success: #8DAE87;
+  --color-warning: #DBB16C;
+  --color-warning-soft: #3C3016;
 }
 
 * {
@@ -57,6 +57,8 @@
 
 html {
   color-scheme: light;
+  /* Never allow horizontal scroll at the document level */
+  overflow-x: hidden;
 }
 html.dark {
   color-scheme: dark;
@@ -66,6 +68,18 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+p {
+  line-height: 1.6;
 }
 
 ::selection {
@@ -98,7 +112,14 @@ body {
 
 /* Hanging-indent note preview, matching the reward-notes treatment */
 .note-preview {
-  line-height: 1.6;
+  line-height: 1.65;
   padding-left: 0.9em;
   text-indent: -0.9em;
+}
+
+/* Any element explicitly marked as a horizontal-scroll region (tables,
+ * wide toolbars on narrow screens) is the ONLY place scrollX is allowed. */
+.scroll-x-region {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

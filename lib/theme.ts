@@ -8,52 +8,56 @@
  *
  * Light values are the source of truth; dark values are the
  * matching pair applied via the `.dark` class on <html>.
+ *
+ * Phase 2: desaturated toward a softer, more neutral warm-beige
+ * (less orange, closer to Birthday Rewards) and widened the
+ * light/dark contrast slightly for readability.
  */
 
 export const theme = {
   light: {
-    background: "#FAF6F0",
+    background: "#FAF8F4",
     surface: "#FFFFFF",
-    surfaceMuted: "#F3ECE1",
-    border: "#E7DCCB",
-    divider: "#ECE3D4",
-    textPrimary: "#3A2E22",
-    textSecondary: "#6B5D4C",
-    textMuted: "#9A8B75",
-    accent: "#B98A5E",
-    accentSoft: "#F1E3D0",
-    accentStrong: "#8C6239",
-    badgeBg: "#F6EEE0",
-    badgeBorder: "#E4D3B8",
-    badgeText: "#7A5C3A",
-    searchBackground: "#F3ECE1",
-    danger: "#B5543F",
-    dangerSoft: "#F6E2DC",
-    success: "#5F7A52",
-    warning: "#C08A3E",
-    warningSoft: "#F6E7CD",
+    surfaceMuted: "#F4EFE6",
+    border: "#E6DFD1",
+    divider: "#EDE8DD",
+    textPrimary: "#3A342C",
+    textSecondary: "#6E6656",
+    textMuted: "#9C927E",
+    accent: "#A68965",
+    accentSoft: "#EFE7D9",
+    accentStrong: "#87694A",
+    badgeBg: "#F3EEE2",
+    badgeBorder: "#E0D6C2",
+    badgeText: "#786A52",
+    searchBackground: "#F4EFE6",
+    danger: "#B0574A",
+    dangerSoft: "#F5E4DF",
+    success: "#5F7A5C",
+    warning: "#B98C4C",
+    warningSoft: "#F3E8D3",
   },
   dark: {
-    background: "#211B15",
-    surface: "#2A2219",
-    surfaceMuted: "#332A1F",
-    border: "#443826",
-    divider: "#3A3122",
-    textPrimary: "#F3EADC",
-    textSecondary: "#CBB99E",
-    textMuted: "#8F7E67",
-    accent: "#D6A876",
-    accentSoft: "#3D2F1F",
-    accentStrong: "#EFC79A",
-    badgeBg: "#38301F",
-    badgeBorder: "#4E4128",
-    badgeText: "#E4C79C",
-    searchBackground: "#332A1F",
-    danger: "#E08268",
-    dangerSoft: "#3E241D",
-    success: "#8FAE7C",
-    warning: "#E0B063",
-    warningSoft: "#3D3016",
+    background: "#211D17",
+    surface: "#2A251E",
+    surfaceMuted: "#332D23",
+    border: "#43392A",
+    divider: "#393226",
+    textPrimary: "#F1EADD",
+    textSecondary: "#CABBA1",
+    textMuted: "#8C806C",
+    accent: "#CBAA80",
+    accentSoft: "#3C3222",
+    accentStrong: "#E9CBA3",
+    badgeBg: "#38311F",
+    badgeBorder: "#4C4029",
+    badgeText: "#E1C79E",
+    searchBackground: "#332D23",
+    danger: "#DB8672",
+    dangerSoft: "#3D251E",
+    success: "#8DAE87",
+    warning: "#DBB16C",
+    warningSoft: "#3C3016",
   },
 } as const;
 
@@ -64,12 +68,12 @@ export type ThemeTokens = typeof theme.light;
  * left-border/dot accents in list mode so categories are scannable
  * at a glance without resorting to a big palette of saturated hues. */
 export const categoryAccentCycle = [
-  "#B98A5E",
-  "#8A9A6B",
-  "#B5738A",
-  "#6E93A8",
-  "#C09A54",
-  "#8E7BA8",
+  "#A68965",
+  "#7E9270",
+  "#AD7B8A",
+  "#6E8B99",
+  "#B99B62",
+  "#8A7A9C",
 ] as const;
 
 export function categoryAccent(index: number): string {
@@ -81,3 +85,7 @@ export const expirationThresholds = {
   soonDays: 60,
   urgentDays: 14,
 } as const;
+
+/** Fixed product-image container size shared by every surface that
+ * displays a product image, per the Phase 2 image spec. */
+export const productImageSize = 88;

@@ -23,15 +23,15 @@ export default function TagsAdminPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">Tags</h1>
-      <p className="mb-5 text-sm text-textMuted">
-        Tags are created automatically when you add one on a product. Manage or clean up the list here.
+      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">標籤</h1>
+      <p className="mb-6 text-sm text-textMuted">
+        在商品上輸入標籤名稱時會自動建立。您可以在這裡重新命名或清理清單。
       </p>
 
       {!loading && (
         <SimpleEntityList
           items={tags}
-          emptyLabel="No tags yet — add one on a product to get started."
+          emptyLabel="尚無標籤 — 請先在商品上新增一個標籤。"
           onRename={async (id, name) => {
             await renameTag(id, name);
             await refresh();

@@ -16,8 +16,10 @@ next-themes (dark mode) · next-pwa (installable app)
 2. Open the SQL editor and run `supabase/schema.sql`. This creates every
    table (`categories`, `subcategories`, `brands`, `tags`, `products`,
    `product_tags`), indexes, the `updated_at` trigger, row-level security
-   policies (public read, authenticated write), and seeds the starter
-   Face / Body / Hair categories from the brief.
+   policies (public read, authenticated write), seeds the starter
+   Face / Body / Hair categories from the brief, and creates the public
+   `product-images` Storage bucket (with the same public-read /
+   authenticated-write policy split) used by the image uploader.
 3. Under **Authentication → Users**, add yourself as a user (email +
    password). This is the account you'll sign in with at `/login` to
    reach the admin panel — there's intentionally no public sign-up.
@@ -84,3 +86,32 @@ home-screen icon when installed.
 - `expiration_type` is `'dated' | 'none' | 'unknown'`. Sorting by
   expiration always puts dated products first (nearest date first);
   `'none'` and `'unknown'` sort after, alphabetically by product name.
+
+## Phase 2 notes
+
+- **UI language**: every visible UI string is Traditional Chinese except
+  the two brand names, "Beauty Inventory" and "Personal Skincare
+  Inventory". There's no i18n framework — strings are written directly
+  in each component, matching the original scope of "polish, not a
+  redesign."
+- **Product images**: there's no manual URL field anymore. Uploading
+  (click or drag-and-drop) runs through `lib/image-optimize.ts`, which
+  resizes the longest side to ~800px and re-encodes to WebP entirely in
+  the browser via `<canvas>`, then `lib/product-images.ts` uploads the
+  result to the `product-images` Supabase Storage bucket and stores the
+  public URL. Replacing or deleting an image best-effort cleans up the
+  previous Storage object. Every surface that shows a product image uses
+  the same fixed 88×88 container with `object-fit: contain` (see
+  `productImageSize` in `lib/theme.ts`), so bottles are never cropped.
+- **List view** (`components/product-list-table.tsx`) is a compact table
+  on tablet/desktop (Product, Brand, Category, Expiration, Quantity,
+  Favorite, Opened) and switches to stacked rows below the `sm` breakpoint
+  so nothing forces horizontal scrolling on a phone.
+- **Mobile layout**: the search bar always gets its own row, with
+  filters/sort/view-toggle wrapping onto the next line as needed; the
+  filter panel becomes a centered, viewport-capped drawer (max 340px)
+  instead of a dropdown that could overflow; and `overflow-x: hidden` is
+  set at the `html`/`body` level as a last-resort guard. The only
+  intentional horizontal-scroll region left is the admin product table,
+  which is a bounded, self-contained scroll box (`.scroll-x-region`), not
+  a page-level overflow.

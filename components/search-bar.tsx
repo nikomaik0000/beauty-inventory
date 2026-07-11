@@ -13,13 +13,13 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Search products…"
+        placeholder="搜尋商品…"
         className="h-10 w-full rounded-xl border border-border bg-searchBackground pl-10 pr-9 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors"
       />
       {value && (
         <button
           type="button"
-          aria-label="Clear search"
+          aria-label="清除搜尋"
           onClick={() => onChange("")}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-textMuted hover:text-textPrimary"
         >

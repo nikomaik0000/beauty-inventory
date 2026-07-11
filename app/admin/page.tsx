@@ -11,15 +11,15 @@ export default async function AdminProductsPage() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-serif text-xl font-semibold text-textPrimary">Products</h1>
-          <p className="text-sm text-textMuted">{products.length} total</p>
+          <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
+          <p className="text-sm text-textMuted">共 {products.length} 件</p>
         </div>
         <Link href="/admin/products/new">
           <Button size="sm">
             <Plus size={15} />
-            Add product
+            新增商品
           </Button>
         </Link>
       </div>

@@ -9,8 +9,8 @@ export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: V
     <div className="flex items-center rounded-full border border-border bg-surface p-0.5">
       {(
         [
-          { mode: "list" as const, icon: List, label: "List" },
-          { mode: "card" as const, icon: LayoutGrid, label: "Card" },
+          { mode: "list" as const, icon: List, label: "列表" },
+          { mode: "card" as const, icon: LayoutGrid, label: "卡片" },
         ]
       ).map((opt) => (
         <button
@@ -18,7 +18,7 @@ export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: V
           type="button"
           onClick={() => onChange(opt.mode)}
           aria-pressed={mode === opt.mode}
-          aria-label={`${opt.label} view`}
+          aria-label={`${opt.label}檢視`}
           className={cn(
             "flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
             mode === opt.mode

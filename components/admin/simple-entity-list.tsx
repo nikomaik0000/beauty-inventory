@@ -37,7 +37,7 @@ export function SimpleEntityList({
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  aria-label="Save"
+                  aria-label="儲存"
                   disabled={pending}
                   onClick={() => {
                     const name = draft.trim();
@@ -53,7 +53,7 @@ export function SimpleEntityList({
                 </button>
                 <button
                   type="button"
-                  aria-label="Cancel"
+                  aria-label="取消"
                   onClick={() => setEditingId(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-textMuted hover:bg-surfaceMuted"
                 >
@@ -67,7 +67,7 @@ export function SimpleEntityList({
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  aria-label={`Rename ${item.name}`}
+                  aria-label={`重新命名 ${item.name}`}
                   onClick={() => {
                     setEditingId(item.id);
                     setDraft(item.name);
@@ -78,10 +78,10 @@ export function SimpleEntityList({
                 </button>
                 <button
                   type="button"
-                  aria-label={`Delete ${item.name}`}
+                  aria-label={`刪除 ${item.name}`}
                   disabled={pending}
                   onClick={() => {
-                    if (!confirm(`Delete "${item.name}"? Products using it will keep their other data.`)) return;
+                    if (!confirm(`確定要刪除「${item.name}」嗎？使用中的商品會保留其他資料。`)) return;
                     startTransition(() => onDelete(item.id));
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-dangerSoft hover:text-danger"

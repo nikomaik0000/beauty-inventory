@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 
 const links = [
-  { href: "/admin", label: "Products", icon: LayoutList },
-  { href: "/admin/categories", label: "Categories", icon: Layers },
-  { href: "/admin/brands", label: "Brands", icon: Boxes },
-  { href: "/admin/tags", label: "Tags", icon: TagsIcon },
+  { href: "/admin", label: "商品", icon: LayoutList },
+  { href: "/admin/categories", label: "分類", icon: Layers },
+  { href: "/admin/brands", label: "品牌", icon: Boxes },
+  { href: "/admin/tags", label: "標籤", icon: TagsIcon },
 ];
 
 export function AdminSidebar() {
@@ -20,7 +20,7 @@ export function AdminSidebar() {
     <nav className="flex shrink-0 flex-col gap-1 border-b border-divider pb-4 sm:w-48 sm:border-b-0 sm:border-r sm:pb-0 sm:pr-4">
       <Link href="/" className="mb-3 flex items-center gap-1.5 text-xs font-medium text-textMuted hover:text-textPrimary">
         <ArrowLeft size={13} />
-        Back to inventory
+        返回首頁
       </Link>
       {links.map((link) => {
         const active = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
@@ -44,7 +44,7 @@ export function AdminSidebar() {
           className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
         >
           <LogOut size={15} />
-          Sign out
+          登出
         </button>
       </form>
     </nav>

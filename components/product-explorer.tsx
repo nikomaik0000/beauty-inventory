@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/search-bar";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortMenu } from "@/components/sort-menu";
 import { ViewToggle } from "@/components/view-toggle";
-import { ProductCardList } from "@/components/product-card-list";
+import { ProductListTable } from "@/components/product-list-table";
 import { ProductCardGrid } from "@/components/product-card-grid";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { daysUntil, isExpiringSoon } from "@/lib/utils";
@@ -113,10 +113,12 @@ export function ProductExplorer({
   };
 
   return (
-    <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <div className="w-full min-w-0">
+      {/* Row 1: search, full width on its own row on mobile.
+          Row 2: filters / sort / view toggle, wrapping freely. */}
+      <div className="flex w-full min-w-0 flex-col gap-3">
         <SearchBar value={filters.search} onChange={(v) => setFilters((f) => ({ ...f, search: v }))} />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <FilterPanel
             filters={filters}
             onChange={setFilters}
@@ -131,25 +133,19 @@ export function ProductExplorer({
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-textMuted">
-        {sorted.length} {sorted.length === 1 ? "product" : "products"}
-      </p>
+      <p className="mt-4 text-xs text-textMuted">共 {sorted.length} 件商品</p>
 
       {sorted.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
-          <p className="text-sm font-medium text-textPrimary">No products match these filters</p>
-          <p className="text-xs text-textMuted">Try clearing a filter or searching a different term.</p>
+          <p className="text-sm font-medium text-textPrimary">沒有符合條件的商品</p>
+          <p className="text-xs text-textMuted">試著清除篩選條件或換個關鍵字搜尋看看。</p>
         </div>
       ) : viewMode === "list" ? (
-        <div className="mt-4 flex flex-col gap-2.5">
-          {sorted.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
-              <ProductCardList product={p} onToggleFavorite={handleToggleFavorite} />
-            </motion.div>
-          ))}
+        <div className="mt-4">
+          <ProductListTable products={sorted} onToggleFavorite={handleToggleFavorite} />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
               <ProductCardGrid product={p} onToggleFavorite={handleToggleFavorite} categoryIndex={categoryIndexOf(p.category_id)} />

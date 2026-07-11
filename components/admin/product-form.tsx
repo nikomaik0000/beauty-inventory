@@ -8,6 +8,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { createProduct, updateProduct } from "@/app/actions/products";
 import type { Category, ProductWithRelations, Subcategory } from "@/lib/types";
@@ -87,13 +88,13 @@ export function ProductForm({
       } catch (err) {
         // NEXT_REDIRECT is thrown by successful server actions; rethrow it
         if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
-        setServerError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+        setServerError(err instanceof Error ? err.message : "發生錯誤，請再試一次。");
       }
     });
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {serverError && (
         <div className="rounded-xl border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
           {serverError}
@@ -101,25 +102,34 @@ export function ProductForm({
       )}
 
       <div>
-        <Label htmlFor="name">Product name</Label>
-        <Input id="name" {...register("name")} placeholder="e.g. Facial Treatment Essence" />
+        <Label>商品圖片</Label>
+        <Controller
+          control={control}
+          name="image_url"
+          render={({ field }) => <ImageUploader value={field.value ?? ""} onChange={field.onChange} />}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="name">商品名稱</Label>
+        <Input id="name" {...register("name")} placeholder="例如：肌因光蘊環采晶采露" />
         <FieldError message={errors.name?.message} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3.5">
         <div>
-          <Label htmlFor="brand_name">Brand</Label>
-          <Input id="brand_name" {...register("brand_name")} placeholder="e.g. SK-II" list="brand-suggestions" />
+          <Label htmlFor="brand_name">品牌</Label>
+          <Input id="brand_name" {...register("brand_name")} placeholder="例如：SK-II" />
         </div>
         <div>
-          <Label htmlFor="quantity">Quantity</Label>
+          <Label htmlFor="quantity">庫存</Label>
           <Input id="quantity" type="number" min={0} {...register("quantity")} />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3.5">
         <div>
-          <Label htmlFor="category_id">Category</Label>
+          <Label htmlFor="category_id">大分類</Label>
           <Controller
             control={control}
             name="category_id"
@@ -129,7 +139,7 @@ export function ProductForm({
                 value={field.value ?? ""}
                 onChange={(e) => field.onChange(e.target.value || null)}
               >
-                <option value="">Choose a category</option>
+                <option value="">請選擇大分類</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -139,7 +149,7 @@ export function ProductForm({
           <FieldError message={errors.category_id?.message} />
         </div>
         <div>
-          <Label htmlFor="subcategory_id">Subcategory</Label>
+          <Label htmlFor="subcategory_id">小分類</Label>
           <Controller
             control={control}
             name="subcategory_id"
@@ -150,7 +160,7 @@ export function ProductForm({
                 onChange={(e) => field.onChange(e.target.value || null)}
                 disabled={visibleSubcategories.length === 0}
               >
-                <option value="">None</option>
+                <option value="">無</option>
                 {visibleSubcategories.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -161,13 +171,7 @@ export function ProductForm({
       </div>
 
       <div>
-        <Label htmlFor="image_url">Image URL</Label>
-        <Input id="image_url" {...register("image_url")} placeholder="https://…" />
-        <FieldError message={errors.image_url?.message} />
-      </div>
-
-      <div>
-        <Label>Tags</Label>
+        <Label>標籤</Label>
         <Controller
           control={control}
           name="tag_names"
@@ -185,7 +189,7 @@ export function ProductForm({
                       setTagDraft("");
                     }
                   }}
-                  placeholder="Type a tag and press Enter"
+                  placeholder="輸入標籤後按 Enter"
                 />
                 <Button
                   type="button"
@@ -196,17 +200,17 @@ export function ProductForm({
                     setTagDraft("");
                   }}
                 >
-                  Add
+                  新增
                 </Button>
               </div>
               {field.value.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
                   {field.value.map((tag) => (
                     <Badge key={tag}>
                       {tag}
                       <button
                         type="button"
-                        aria-label={`Remove ${tag}`}
+                        aria-label={`移除 ${tag}`}
                         onClick={() => field.onChange(field.value.filter((t) => t !== tag))}
                       >
                         <X size={11} />
@@ -220,18 +224,18 @@ export function ProductForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3.5">
         <div>
-          <Label htmlFor="expiration_type">Expiration</Label>
+          <Label htmlFor="expiration_type">截止日期類型</Label>
           <Select id="expiration_type" {...register("expiration_type")}>
-            <option value="dated">Has expiration date</option>
-            <option value="none">No expiration</option>
-            <option value="unknown">Unknown</option>
+            <option value="dated">有截止日期</option>
+            <option value="none">無期限</option>
+            <option value="unknown">未知</option>
           </Select>
         </div>
         {expirationType === "dated" && (
           <div>
-            <Label htmlFor="expiration_date">Expiration date</Label>
+            <Label htmlFor="expiration_date">截止日期</Label>
             <Input id="expiration_date" type="date" {...register("expiration_date")} />
             <FieldError message={errors.expiration_date?.message} />
           </div>
@@ -239,39 +243,39 @@ export function ProductForm({
       </div>
 
       <div>
-        <Label htmlFor="pao_months">PAO — Period After Opening (months)</Label>
-        <Input id="pao_months" type="number" min={0} {...register("pao_months")} placeholder="e.g. 12" />
+        <Label htmlFor="pao_months">開封後使用期限（PAO，月）</Label>
+        <Input id="pao_months" type="number" min={0} {...register("pao_months")} placeholder="例如：12" />
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-surfaceMuted/50 p-3.5">
+      <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-surfaceMuted/50 p-4">
         <label className="flex items-center gap-2 text-sm text-textSecondary">
           <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("opened")} />
-          Opened
+          已開封
         </label>
         {opened && (
           <div>
-            <Label htmlFor="opened_date">Opened date</Label>
+            <Label htmlFor="opened_date">開封日期</Label>
             <Input id="opened_date" type="date" {...register("opened_date")} />
             <FieldError message={errors.opened_date?.message} />
           </div>
         )}
         <label className="flex items-center gap-2 text-sm text-textSecondary">
           <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("is_favorite")} />
-          Favorite
+          收藏
         </label>
       </div>
 
       <div>
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea id="notes" {...register("notes")} placeholder="Anything worth remembering about this product…" />
+        <Label htmlFor="notes">備註</Label>
+        <Textarea id="notes" {...register("notes")} placeholder="任何值得記錄的小筆記…" />
       </div>
 
-      <div className="flex items-center gap-2 pt-2">
+      <div className="flex items-center gap-2.5 pt-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : product ? "Save changes" : "Add product"}
+          {pending ? "儲存中…" : product ? "儲存變更" : "新增商品"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => router.push("/admin")}>
-          Cancel
+          取消
         </Button>
       </div>
     </form>

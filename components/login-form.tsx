@@ -21,30 +21,30 @@ export function LoginForm() {
             await signIn(email, password);
           } catch (err) {
             if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
-            setError(err instanceof Error ? err.message : "Could not sign in.");
+            setError(err instanceof Error ? err.message : "登入失敗，請再試一次。");
           }
         });
       }}
       className="w-full max-w-sm space-y-4 rounded-card border border-border bg-surface p-6 shadow-card"
     >
       <div>
-        <h1 className="font-serif text-lg font-semibold text-textPrimary">Admin sign in</h1>
-        <p className="mt-1 text-xs text-textMuted">Sign in to manage products, categories, brands, and tags.</p>
+        <h1 className="font-serif text-lg font-semibold text-textPrimary">後台登入</h1>
+        <p className="mt-1 text-xs text-textMuted">登入以管理商品、分類、品牌與標籤。</p>
       </div>
 
       {error && <p className="rounded-lg bg-dangerSoft px-3 py-2 text-xs text-danger">{error}</p>}
 
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">電子郵件</Label>
         <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </div>
       <div>
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">密碼</Label>
         <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
 
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "登入中…" : "登入"}
       </Button>
     </form>
   );

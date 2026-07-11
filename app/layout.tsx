@@ -8,7 +8,7 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-serif", displa
 
 export const metadata: Metadata = {
   title: "Beauty Inventory — Personal Skincare Inventory",
-  description: "Track your skincare, keep an eye on expiration dates, and never lose a favorite again.",
+  description: "記錄您的保養品收藏，掌握截止日期，不再遺忘心愛的好物。",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -18,15 +18,17 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF6F0" },
-    { media: "(prefers-color-scheme: dark)", color: "#211B15" },
+    { media: "(prefers-color-scheme: light)", color: "#FAF8F4" },
+    { media: "(prefers-color-scheme: dark)", color: "#211D17" },
   ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-Hant" suppressHydrationWarning>
       <body className={`${inter.variable} ${fraunces.variable} font-sans`}>
         <Providers>{children}</Providers>
       </body>

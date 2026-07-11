@@ -133,8 +133,20 @@ export async function updateProduct(id: string, raw: ProductFormValues) {
 
 export async function deleteProduct(id: string) {
   const supabase = await createClient();
+
+  const { data: existing } = await supabase.from("products").select("image_url").eq("id", id).maybeSingle();
+
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  if (existing?.image_url) {
+    const marker = "/product-images/";
+    const idx = existing.image_url.indexOf(marker);
+    if (idx !== -1) {
+      const path = existing.image_url.slice(idx + marker.length);
+      await supabase.storage.from("product-images").remove([path]).catch(() => {});
+    }
+  }
 
   revalidatePath("/");
   revalidatePath("/admin");

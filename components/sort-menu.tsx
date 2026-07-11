@@ -5,12 +5,12 @@ import { Select } from "@/components/ui/input";
 import type { SortField } from "@/lib/types";
 
 const options: { value: SortField; label: string }[] = [
-  { value: "expiration", label: "Expiration date (soonest first)" },
-  { value: "brand", label: "Brand" },
-  { value: "name", label: "Product name" },
-  { value: "created_at", label: "Date added" },
-  { value: "updated_at", label: "Last updated" },
-  { value: "quantity", label: "Quantity" },
+  { value: "expiration", label: "截止日期（最近優先）" },
+  { value: "brand", label: "品牌" },
+  { value: "name", label: "商品名稱" },
+  { value: "created_at", label: "新增日期" },
+  { value: "updated_at", label: "最後更新" },
+  { value: "quantity", label: "庫存數量" },
 ];
 
 export function SortMenu({ value, onChange }: { value: SortField; onChange: (v: SortField) => void }) {
@@ -21,7 +21,7 @@ export function SortMenu({ value, onChange }: { value: SortField; onChange: (v: 
         value={value}
         onChange={(e) => onChange(e.target.value as SortField)}
         className="pl-8 w-auto min-w-[180px]"
-        aria-label="Sort by"
+        aria-label="排序方式"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

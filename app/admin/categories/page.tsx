@@ -44,13 +44,13 @@ export default function CategoriesAdminPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">Categories</h1>
-      <p className="mb-5 text-sm text-textMuted">
-        Categories and subcategories are fully custom — add as many as your collection needs.
+      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">分類</h1>
+      <p className="mb-6 text-sm text-textMuted">
+        大分類與小分類完全自訂 — 依您的收藏需求新增任意數量。
       </p>
 
       <AddEntityForm
-        placeholder="New category name (e.g. Makeup)"
+        placeholder="新的大分類名稱（例如：彩妝）"
         onAdd={async (name) => {
           await createCategory(name);
           await refresh();
@@ -66,7 +66,7 @@ export default function CategoriesAdminPage() {
                   <Input value={categoryDraft} onChange={(e) => setCategoryDraft(e.target.value)} className="h-8" autoFocus />
                   <button
                     type="button"
-                    aria-label="Save category name"
+                    aria-label="儲存大分類名稱"
                     onClick={async () => {
                       const name = categoryDraft.trim();
                       if (!name) return;
@@ -78,7 +78,7 @@ export default function CategoriesAdminPage() {
                   >
                     <Check size={16} />
                   </button>
-                  <button type="button" aria-label="Cancel" onClick={() => setEditingCategoryId(null)} className="text-textMuted">
+                  <button type="button" aria-label="取消" onClick={() => setEditingCategoryId(null)} className="text-textMuted">
                     <X size={16} />
                   </button>
                 </div>
@@ -88,7 +88,7 @@ export default function CategoriesAdminPage() {
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      aria-label={`Rename ${category.name}`}
+                      aria-label={`重新命名 ${category.name}`}
                       onClick={() => {
                         setEditingCategoryId(category.id);
                         setCategoryDraft(category.name);
@@ -99,9 +99,9 @@ export default function CategoriesAdminPage() {
                     </button>
                     <button
                       type="button"
-                      aria-label={`Delete ${category.name}`}
+                      aria-label={`刪除 ${category.name}`}
                       onClick={async () => {
-                        if (!confirm(`Delete "${category.name}" and all its subcategories?`)) return;
+                        if (!confirm(`確定要刪除「${category.name}」及其所有小分類嗎？`)) return;
                         await deleteCategory(category.id);
                         await refresh();
                       }}
@@ -124,7 +124,7 @@ export default function CategoriesAdminPage() {
                         <Input value={subDraft} onChange={(e) => setSubDraft(e.target.value)} className="h-7" autoFocus />
                         <button
                           type="button"
-                          aria-label="Save subcategory name"
+                          aria-label="儲存小分類名稱"
                           onClick={async () => {
                             const name = subDraft.trim();
                             if (!name) return;
@@ -136,7 +136,7 @@ export default function CategoriesAdminPage() {
                         >
                           <Check size={14} />
                         </button>
-                        <button type="button" aria-label="Cancel" onClick={() => setEditingSubId(null)} className="text-textMuted">
+                        <button type="button" aria-label="取消" onClick={() => setEditingSubId(null)} className="text-textMuted">
                           <X size={14} />
                         </button>
                       </div>
@@ -146,7 +146,7 @@ export default function CategoriesAdminPage() {
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            aria-label={`Rename ${sub.name}`}
+                            aria-label={`重新命名 ${sub.name}`}
                             onClick={() => {
                               setEditingSubId(sub.id);
                               setSubDraft(sub.name);
@@ -157,9 +157,9 @@ export default function CategoriesAdminPage() {
                           </button>
                           <button
                             type="button"
-                            aria-label={`Delete ${sub.name}`}
+                            aria-label={`刪除 ${sub.name}`}
                             onClick={async () => {
-                              if (!confirm(`Delete "${sub.name}"?`)) return;
+                              if (!confirm(`確定要刪除「${sub.name}」嗎？`)) return;
                               await deleteSubcategory(sub.id);
                               await refresh();
                             }}
@@ -178,7 +178,7 @@ export default function CategoriesAdminPage() {
               <Input
                 value={newSubName[category.id] ?? ""}
                 onChange={(e) => setNewSubName((prev) => ({ ...prev, [category.id]: e.target.value }))}
-                placeholder="New subcategory"
+                placeholder="新的小分類"
                 className="h-8"
                 onKeyDown={async (e) => {
                   if (e.key !== "Enter") return;
@@ -192,7 +192,7 @@ export default function CategoriesAdminPage() {
               />
               <button
                 type="button"
-                aria-label="Add subcategory"
+                aria-label="新增小分類"
                 onClick={async () => {
                   const name = (newSubName[category.id] ?? "").trim();
                   if (!name) return;

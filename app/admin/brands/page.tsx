@@ -23,16 +23,16 @@ export default function BrandsAdminPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">Brands</h1>
-      <p className="mb-5 text-sm text-textMuted">
-        Brands are created automatically when you enter one on a product. Manage or clean up the list here.
+      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">品牌</h1>
+      <p className="mb-6 text-sm text-textMuted">
+        在商品上輸入品牌名稱時會自動建立。您可以在這裡重新命名或清理清單。
       </p>
 
       {!loading && (
         <>
           <SimpleEntityList
             items={brands}
-            emptyLabel="No brands yet — add one on a product to get started."
+            emptyLabel="尚無品牌 — 請先在商品上新增一個品牌。"
             onRename={async (id, name) => {
               await renameBrand(id, name);
               await refresh();
