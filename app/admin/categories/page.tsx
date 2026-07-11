@@ -13,11 +13,18 @@ import {
   renameSubcategory,
 } from "@/app/actions/taxonomy";
 import { createClient } from "@/lib/supabase/client";
+import { formatCapacity } from "@/lib/utils";
 import type { Category, Subcategory } from "@/lib/types";
+
+interface SubcategorySummary {
+  count: number;
+  totalCapacity: number;
+}
 
 export default function CategoriesAdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [summaryBySubcategory, setSummaryBySubcategory] = useState<Record<string, SubcategorySummary>>({});
   const [loading, setLoading] = useState(true);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryDraft, setCategoryDraft] = useState("");
@@ -27,12 +34,27 @@ export default function CategoriesAdminPage() {
 
   async function refresh() {
     const supabase = createClient();
-    const [{ data: cats }, { data: subs }] = await Promise.all([
+    const [{ data: cats }, { data: subs }, { data: products }] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase.from("subcategories").select("*").order("sort_order"),
+      supabase.from("products").select("subcategory_id, capacity"),
     ]);
     setCategories(cats ?? []);
     setSubcategories(subs ?? []);
+
+    // Total Capacity per subcategory — recomputed from the live product
+    // set every time products are added/edited/deleted, since capacities
+    // are all treated the same (just summed, no unit conversion).
+    const summary: Record<string, SubcategorySummary> = {};
+    for (const p of products ?? []) {
+      if (!p.subcategory_id) continue;
+      const entry = summary[p.subcategory_id] ?? { count: 0, totalCapacity: 0 };
+      entry.count += 1;
+      entry.totalCapacity += p.capacity ?? 0;
+      summary[p.subcategory_id] = entry;
+    }
+    setSummaryBySubcategory(summary);
+
     setLoading(false);
   }
 
@@ -142,7 +164,14 @@ export default function CategoriesAdminPage() {
                       </div>
                     ) : (
                       <>
-                        <span className="text-textSecondary">{sub.name}</span>
+                        <span className="text-textSecondary">
+                          {sub.name}
+                          <span className="ml-2 text-xs text-textMuted">
+                            {summaryBySubcategory[sub.id]?.count ?? 0} 件商品
+                            {formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0) &&
+                              ` · ${formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0)}`}
+                          </span>
+                        </span>
                         <div className="flex items-center gap-1">
                           <button
                             type="button"

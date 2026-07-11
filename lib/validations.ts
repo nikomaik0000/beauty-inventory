@@ -6,7 +6,6 @@ export const productSchema = z
     brand_name: z.string().max(120).optional().or(z.literal("")),
     category_id: z.string().uuid("Choose a category").nullable(),
     subcategory_id: z.string().uuid().nullable().optional(),
-    tag_names: z.array(z.string().min(1).max(60)).default([]),
     image_url: z.string().url().optional().or(z.literal("")),
     expiration_type: z.enum(["dated", "none", "unknown"]),
     expiration_date: z.string().optional().or(z.literal("")),
@@ -15,8 +14,10 @@ export const productSchema = z
     pao_months: z
       .union([z.coerce.number().int().min(0).max(120), z.literal("")])
       .optional(),
+    capacity: z
+      .union([z.coerce.number().min(0).max(100000), z.literal("")])
+      .optional(),
     quantity: z.coerce.number().int().min(0).max(9999).default(1),
-    is_favorite: z.boolean().default(false),
     notes: z.string().max(2000).optional().or(z.literal("")),
   })
   .refine(

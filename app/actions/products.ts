@@ -5,9 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 
-/** Finds a brand by name (case-insensitive) or creates it, exactly like
- * the Birthday Rewards tag system: only brands actually in use appear
- * anywhere else in the app. */
+/** Finds a brand by name (case-insensitive) or creates it: only brands
+ * actually in use appear anywhere else in the app. */
 async function upsertBrandId(name: string): Promise<string | null> {
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -31,38 +30,6 @@ async function upsertBrandId(name: string): Promise<string | null> {
   return created.id;
 }
 
-async function upsertTagIds(names: string[]): Promise<string[]> {
-  const supabase = await createClient();
-  const ids: string[] = [];
-
-  for (const raw of names) {
-    const trimmed = raw.trim();
-    if (!trimmed) continue;
-
-    const { data: existing } = await supabase
-      .from("tags")
-      .select("id")
-      .ilike("name", trimmed)
-      .maybeSingle();
-
-    if (existing) {
-      ids.push(existing.id);
-      continue;
-    }
-
-    const { data: created, error } = await supabase
-      .from("tags")
-      .insert({ name: trimmed })
-      .select("id")
-      .single();
-
-    if (error) throw new Error(`Could not create tag "${trimmed}": ${error.message}`);
-    ids.push(created.id);
-  }
-
-  return ids;
-}
-
 function toDbRow(values: ProductFormValues, brandId: string | null) {
   return {
     name: values.name.trim(),
@@ -75,8 +42,8 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
     opened: values.opened,
     opened_date: values.opened ? values.opened_date || null : null,
     pao_months: values.pao_months === "" || values.pao_months == null ? null : Number(values.pao_months),
+    capacity: values.capacity === "" || values.capacity == null ? null : Number(values.capacity),
     quantity: values.quantity,
-    is_favorite: values.is_favorite,
     notes: values.notes || null,
   };
 }
@@ -84,23 +51,10 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
 export async function createProduct(raw: ProductFormValues) {
   const values = productSchema.parse(raw);
   const brandId = await upsertBrandId(values.brand_name ?? "");
-  const tagIds = await upsertTagIds(values.tag_names);
 
   const supabase = await createClient();
-  const { data: product, error } = await supabase
-    .from("products")
-    .insert(toDbRow(values, brandId))
-    .select("id")
-    .single();
-
+  const { error } = await supabase.from("products").insert(toDbRow(values, brandId));
   if (error) throw new Error(error.message);
-
-  if (tagIds.length > 0) {
-    const { error: tagError } = await supabase
-      .from("product_tags")
-      .insert(tagIds.map((tag_id) => ({ product_id: product.id, tag_id })));
-    if (tagError) throw new Error(tagError.message);
-  }
 
   revalidatePath("/");
   revalidatePath("/admin");
@@ -110,21 +64,10 @@ export async function createProduct(raw: ProductFormValues) {
 export async function updateProduct(id: string, raw: ProductFormValues) {
   const values = productSchema.parse(raw);
   const brandId = await upsertBrandId(values.brand_name ?? "");
-  const tagIds = await upsertTagIds(values.tag_names);
 
   const supabase = await createClient();
   const { error } = await supabase.from("products").update(toDbRow(values, brandId)).eq("id", id);
   if (error) throw new Error(error.message);
-
-  const { error: deleteTagsError } = await supabase.from("product_tags").delete().eq("product_id", id);
-  if (deleteTagsError) throw new Error(deleteTagsError.message);
-
-  if (tagIds.length > 0) {
-    const { error: tagError } = await supabase
-      .from("product_tags")
-      .insert(tagIds.map((tag_id) => ({ product_id: id, tag_id })));
-    if (tagError) throw new Error(tagError.message);
-  }
 
   revalidatePath("/");
   revalidatePath("/admin");
@@ -150,14 +93,6 @@ export async function deleteProduct(id: string) {
 
   revalidatePath("/");
   revalidatePath("/admin");
-}
-
-export async function toggleFavorite(id: string, isFavorite: boolean) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("products").update({ is_favorite: isFavorite }).eq("id", id);
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/");
 }
 
 export async function toggleOpened(id: string, opened: boolean, openedDate: string | null) {

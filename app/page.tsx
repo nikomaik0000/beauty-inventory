@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 import { ProductExplorer } from "@/components/product-explorer";
-import { getCategories, getProductsWithRelations, getSubcategories, usedBrands, usedTags } from "@/lib/queries";
+import { getCategories, getProductsWithRelations, getSubcategories, usedBrands } from "@/lib/queries";
 
 export const revalidate = 0;
 
@@ -12,7 +12,6 @@ export default async function HomePage() {
   ]);
 
   const brands = usedBrands(products);
-  const tags = usedTags(products);
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,7 +22,6 @@ export default async function HomePage() {
           categories={categories}
           subcategories={subcategories}
           brands={brands}
-          tags={tags}
         />
       </main>
     </div>

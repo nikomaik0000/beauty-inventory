@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Heart } from "lucide-react";
+import { Package, PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { categoryAccent, productImageSize, theme } from "@/lib/theme";
-import { cn, formatCategoryPath, formatExpiration, getExpirationStatus, initials } from "@/lib/utils";
+import { formatCapacity, formatExpiration, getExpirationStatus, initials } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
 
 const statusTone = {
@@ -18,14 +18,13 @@ const statusTone = {
 
 export function ProductCardGrid({
   product,
-  onToggleFavorite,
   categoryIndex = 0,
 }: {
   product: ProductWithRelations;
-  onToggleFavorite?: (id: string, next: boolean) => void;
   categoryIndex?: number;
 }) {
   const status = getExpirationStatus(product);
+  const capacityText = formatCapacity(product.capacity);
 
   return (
     <div className="flex h-full gap-3.5 rounded-card border border-border bg-surface p-4 shadow-card transition-shadow hover:shadow-cardHover">
@@ -59,34 +58,23 @@ export function ProductCardGrid({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
           <h3 className="truncate text-sm font-semibold text-textPrimary">{product.name}</h3>
-          <button
-            type="button"
-            aria-label={product.is_favorite ? "取消收藏" : "加入收藏"}
-            onClick={() => onToggleFavorite?.(product.id, !product.is_favorite)}
-            className={cn("shrink-0 text-textMuted transition-colors hover:text-danger", product.is_favorite && "text-danger")}
-          >
-            <Heart size={15} fill={product.is_favorite ? "currentColor" : "none"} />
-          </button>
+          <span className="shrink-0 text-textMuted" role="img" aria-label={product.opened ? "已開封" : "未開封"}>
+            {product.opened ? <PackageOpen size={15} /> : <Package size={15} />}
+          </span>
         </div>
 
         {product.brand && <p className="mt-0.5 truncate text-xs text-textSecondary">{product.brand.name}</p>}
-        <p className="truncate text-xs text-textMuted">
-          {formatCategoryPath(product.category?.name, product.subcategory?.name)}
-        </p>
-
-        {product.tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {product.tags.slice(0, 3).map((t) => (
-              <Badge key={t.id}>{t.name}</Badge>
-            ))}
-            {product.tags.length > 3 && <Badge tone="muted">+{product.tags.length - 3}</Badge>}
-          </div>
-        )}
 
         <div className="mt-auto flex items-center justify-between pt-2.5">
           <Badge tone={statusTone[status]} className="text-[11px]">{formatExpiration(product)}</Badge>
-          <span className="text-xs text-textMuted">×{product.quantity}</span>
+          <span className="text-xs text-textMuted">
+            {capacityText && `${capacityText} · `}×{product.quantity}
+          </span>
         </div>
+
+        {product.notes && (
+          <p className="note-preview mt-2 line-clamp-2 text-xs text-textMuted">{product.notes}</p>
+        )}
       </div>
     </div>
   );

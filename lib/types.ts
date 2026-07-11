@@ -21,12 +21,6 @@ export interface Brand {
   created_at: string;
 }
 
-export interface Tag {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
 export interface Product {
   id: string;
   name: string;
@@ -39,8 +33,8 @@ export interface Product {
   opened: boolean;
   opened_date: string | null;
   pao_months: number | null; // Period After Opening, in months
+  capacity: number | null; // plain number, unit intentionally omitted — personal use only
   quantity: number;
-  is_favorite: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -51,7 +45,6 @@ export interface ProductWithRelations extends Product {
   brand: Brand | null;
   category: Category | null;
   subcategory: Subcategory | null;
-  tags: Tag[];
 }
 
 export type ViewMode = "list" | "card";
@@ -77,9 +70,7 @@ export interface ProductFilters {
   categoryId: string | null;
   subcategoryId: string | null;
   brandId: string | null;
-  tagIds: string[];
   openedStatus: "all" | "opened" | "unopened";
-  favoritesOnly: boolean;
   expiringSoonOnly: boolean;
 }
 
@@ -88,8 +79,6 @@ export const defaultFilters: ProductFilters = {
   categoryId: null,
   subcategoryId: null,
   brandId: null,
-  tagIds: [],
   openedStatus: "all",
-  favoritesOnly: false,
   expiringSoonOnly: false,
 };

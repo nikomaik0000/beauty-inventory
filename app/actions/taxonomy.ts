@@ -78,21 +78,3 @@ export async function deleteBrand(id: string) {
   revalidatePath("/admin/brands");
   revalidatePath("/");
 }
-
-// --- Tags -------------------------------------------------------------
-
-export async function renameTag(id: string, name: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("tags").update({ name: name.trim() }).eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/tags");
-  revalidatePath("/");
-}
-
-export async function deleteTag(id: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("tags").delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/tags");
-  revalidatePath("/");
-}

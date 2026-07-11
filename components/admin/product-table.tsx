@@ -14,7 +14,7 @@ import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { deleteProduct } from "@/app/actions/products";
-import { formatCategoryPath, formatExpiration, getExpirationStatus } from "@/lib/utils";
+import { formatCapacity, formatCategoryPath, formatExpiration, getExpirationStatus } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
 
 const statusTone = {
@@ -47,6 +47,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       columnHelper.accessor((row) => row.brand?.name ?? "—", {
         id: "brand",
         header: "品牌",
+      }),
+      columnHelper.accessor((row) => formatCapacity(row.capacity) ?? "—", {
+        id: "capacity",
+        header: "容量",
       }),
       columnHelper.accessor("quantity", {
         header: "庫存",
@@ -122,7 +126,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
     <div className="rounded-card border border-border bg-surface shadow-card">
       {/* Tablet / desktop: full data table inside a bounded scroll region. */}
       <div className="scroll-x-region hidden lg:block">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[780px] text-left text-sm">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b border-divider">
@@ -199,7 +203,9 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge tone={statusTone[status]} className="text-[11px]">{formatExpiration(p)}</Badge>
-                <span className="text-xs text-textMuted">×{p.quantity}</span>
+                <span className="text-xs text-textMuted">
+                  {formatCapacity(p.capacity) ? `${formatCapacity(p.capacity)} · ` : ""}×{p.quantity}
+                </span>
                 {p.opened ? <Badge tone="muted">已開封</Badge> : <Badge tone="success">未開封</Badge>}
               </div>
             </li>

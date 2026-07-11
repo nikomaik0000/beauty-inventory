@@ -4,10 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { createProduct, updateProduct } from "@/app/actions/products";
@@ -25,7 +23,6 @@ export function ProductForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [tagDraft, setTagDraft] = useState("");
 
   const {
     register,
@@ -41,15 +38,14 @@ export function ProductForm({
           brand_name: product.brand?.name ?? "",
           category_id: product.category_id,
           subcategory_id: product.subcategory_id,
-          tag_names: product.tags.map((t) => t.name),
           image_url: product.image_url ?? "",
           expiration_type: product.expiration_type,
           expiration_date: product.expiration_date ?? "",
           opened: product.opened,
           opened_date: product.opened_date ?? "",
           pao_months: product.pao_months ?? "",
+          capacity: product.capacity ?? "",
           quantity: product.quantity,
-          is_favorite: product.is_favorite,
           notes: product.notes ?? "",
         }
       : {
@@ -57,15 +53,14 @@ export function ProductForm({
           brand_name: "",
           category_id: null,
           subcategory_id: null,
-          tag_names: [],
           image_url: "",
           expiration_type: "unknown",
           expiration_date: "",
           opened: false,
           opened_date: "",
           pao_months: "",
+          capacity: "",
           quantity: 1,
-          is_favorite: false,
           notes: "",
         },
   });
@@ -171,57 +166,9 @@ export function ProductForm({
       </div>
 
       <div>
-        <Label>標籤</Label>
-        <Controller
-          control={control}
-          name="tag_names"
-          render={({ field }) => (
-            <div>
-              <div className="flex gap-2">
-                <Input
-                  value={tagDraft}
-                  onChange={(e) => setTagDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      const trimmed = tagDraft.trim();
-                      if (trimmed && !field.value.includes(trimmed)) field.onChange([...field.value, trimmed]);
-                      setTagDraft("");
-                    }
-                  }}
-                  placeholder="輸入標籤後按 Enter"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    const trimmed = tagDraft.trim();
-                    if (trimmed && !field.value.includes(trimmed)) field.onChange([...field.value, trimmed]);
-                    setTagDraft("");
-                  }}
-                >
-                  新增
-                </Button>
-              </div>
-              {field.value.length > 0 && (
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {field.value.map((tag) => (
-                    <Badge key={tag}>
-                      {tag}
-                      <button
-                        type="button"
-                        aria-label={`移除 ${tag}`}
-                        onClick={() => field.onChange(field.value.filter((t) => t !== tag))}
-                      >
-                        <X size={11} />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        />
+        <Label htmlFor="capacity">容量</Label>
+        <Input id="capacity" type="number" min={0} step="any" {...register("capacity")} placeholder="例如：100" />
+        <p className="mt-1 text-[11px] text-textMuted">僅需輸入數字，不含單位。</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3.5">
@@ -259,10 +206,6 @@ export function ProductForm({
             <FieldError message={errors.opened_date?.message} />
           </div>
         )}
-        <label className="flex items-center gap-2 text-sm text-textSecondary">
-          <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("is_favorite")} />
-          收藏
-        </label>
       </div>
 
       <div>

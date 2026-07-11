@@ -24,6 +24,10 @@ next-themes (dark mode) · next-pwa (installable app)
 4. Set up Storage for product images — see the dedicated section below.
    Skipping this step is the #1 cause of "Upload failed: Bucket not
    found" — the image uploader will not work until it's done.
+5. If you already have a database from before Phase 2B (Tags removed,
+   Favorite removed, Capacity added), run
+   `supabase/phase-2b-migration.sql` once. Fresh installs don't need
+   this — `schema.sql` already includes `capacity`.
 
 ## 2. Supabase Storage setup (required for product images)
 
@@ -135,8 +139,8 @@ home-screen icon when installed.
   presentational.
 - `app/admin/` — the admin panel: products table (`/admin`), add/edit
   product form, and management pages for categories & subcategories
-  (nested together, since a subcategory always belongs to a category),
-  brands, and tags.
+  (nested together, since a subcategory always belongs to a category)
+  and brands.
 - `lib/image-optimize.ts` / `lib/product-images.ts` /
   `components/admin/image-uploader.tsx` — the product image pipeline:
   validate → resize to ~800px + WebP in the browser → upload to Supabase
@@ -148,13 +152,18 @@ home-screen icon when installed.
 
 - Categories and subcategories are plain database tables, not an enum —
   add "Makeup", "Perfume", or anything else from the admin panel without
-  a schema change.
-- Brands and tags follow a "create on first use" pattern: entering a new
-  brand or tag name on a product creates the row automatically, and both
-  admin pages just clean up / rename what already exists. Filters only
-  ever list brands/tags actually in use on a product (`usedBrands` /
-  `usedTags` in `lib/queries.ts`), computed from the loaded product set
-  rather than the raw tables.
+  a schema change. They're still used for organizing and filtering
+  products, but are intentionally not shown on product cards or the list
+  view — see "Phase 2B notes" below.
+- Brands follow a "create on first use" pattern: entering a new brand
+  name on a product creates the row automatically, and the admin page
+  just cleans up / renames what already exists. Filters only ever list
+  brands actually in use on a product (`usedBrands` in `lib/queries.ts`),
+  computed from the loaded product set rather than the raw table.
+- `capacity` is a plain nullable number with no unit column — this is a
+  personal-use app, so the unit is whatever you already know it to be.
+  Empty/zero is treated as "not set" and never displayed
+  (`formatCapacity` in `lib/utils.ts`).
 - `expiration_type` is `'dated' | 'none' | 'unknown'`. Sorting by
   expiration always puts dated products first (nearest date first);
   `'none'` and `'unknown'` sort after, alphabetically by product name.
@@ -223,3 +232,33 @@ rebuilt rather than patched:
 - The database still only ever stores the final public URL — the
   uploader only calls `onChange` after a successful upload, never with a
   local/blob URL.
+
+## Phase 2B notes — simplification
+
+- **Tags removed.** The Tags field, badges, filter, and admin page are
+  gone from the app. The `tags` / `product_tags` tables are still
+  defined in `schema.sql` (not dropped) in case any data in them
+  mattered — the app just never reads or writes them anymore.
+- **Favorite removed.** The `is_favorite` column, the heart icon/button,
+  favorite filtering, and favorite sorting are all gone. In the same
+  visual spot the heart used to occupy, product cards and the list view
+  now show a plain, non-interactive Package / PackageOpen icon
+  reflecting the existing `opened` boolean — no label, tooltip, or
+  badge text, since this is a personal-use app where the icon alone is
+  enough.
+- **Category/Subcategory kept, but hidden from the frontend.** They're
+  still real tables, still editable in the admin panel, and still power
+  search/filtering — they're just no longer printed on product cards or
+  in the list view, since they're organizational data rather than
+  something you need to re-read every time you glance at a product.
+- **Capacity added.** A single optional numeric field, no unit — see
+  "Data model notes" above. The admin Categories page now shows a live
+  "N 件商品 · total capacity" summary under each subcategory, recomputed
+  from the current product set every time you load that page.
+- **Notes now shown on the frontend** (card and list view) whenever a
+  product has any — hidden entirely otherwise, no empty placeholder.
+- Also fixed while touching this code: `formatExpiration` and
+  `formatCategoryPath` in `lib/utils.ts` still had English fallback
+  strings ("No expiration", "Unknown", "Uncategorized") left over from
+  the Phase 2 localization pass — those are now Traditional Chinese too.
+

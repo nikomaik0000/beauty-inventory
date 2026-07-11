@@ -6,19 +6,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { defaultFilters } from "@/lib/types";
-import type { Brand, Category, ProductFilters, Subcategory, Tag } from "@/lib/types";
+import type { Brand, Category, ProductFilters, Subcategory } from "@/lib/types";
 
 /**
  * Filter entry point + centered modal dialog.
  *
- * Phase 2A: replaced the old dropdown/drawer (which could render partly
- * off-screen) with a modal that's always centered and always capped to
- * the viewport, on every screen size. Edits are staged locally and only
- * committed to the parent when "套用" (Apply) is pressed, so "取消"
- * (Cancel) can cleanly discard them.
- *
- * `tags` stays in the prop type (unused here) so the caller doesn't need
- * to change — this pass only touches the filter UI itself.
+ * A centered modal, always capped to the viewport, on every screen
+ * size. Edits are staged locally and only committed to the parent when
+ * "套用" (Apply) is pressed, so "取消" (Cancel) can cleanly discard them.
  */
 export function FilterPanel({
   filters,
@@ -33,7 +28,6 @@ export function FilterPanel({
   categories: Category[];
   subcategories: Subcategory[];
   brands: Brand[];
-  tags: Tag[];
   activeCount: number;
 }) {
   const [open, setOpen] = useState(false);

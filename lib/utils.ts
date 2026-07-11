@@ -35,19 +35,27 @@ export function isExpiringSoon(product: Pick<Product, "expiration_type" | "expir
 }
 
 export function formatExpiration(product: Pick<Product, "expiration_type" | "expiration_date">): string {
-  if (product.expiration_type === "none") return "No expiration";
-  if (product.expiration_type === "unknown" || !product.expiration_date) return "Unknown";
+  if (product.expiration_type === "none") return "無期限";
+  if (product.expiration_type === "unknown" || !product.expiration_date) return "未知";
 
   const date = new Date(product.expiration_date);
-  const formatted = date.toLocaleDateString("en-US", {
+  const formatted = date.toLocaleDateString("zh-Hant", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 
   const days = daysUntil(product.expiration_date);
-  if (days < 0) return `${formatted} (expired)`;
+  if (days < 0) return `${formatted}（已過期）`;
   return formatted;
+}
+
+/** Plain number, no unit — 0/empty is treated as "not set" and should
+ * never be displayed (matches the product form: leaving Capacity empty
+ * shows nothing rather than a 0). */
+export function formatCapacity(capacity: number | null | undefined): string | null {
+  if (capacity == null || capacity <= 0) return null;
+  return String(capacity);
 }
 
 /** Computes a projected "use by" date from an opened date + PAO window,
@@ -69,5 +77,5 @@ export function initials(name: string): string {
 
 export function formatCategoryPath(categoryName?: string | null, subcategoryName?: string | null): string {
   if (categoryName && subcategoryName) return `${categoryName} > ${subcategoryName}`;
-  return categoryName ?? subcategoryName ?? "Uncategorized";
+  return categoryName ?? subcategoryName ?? "未分類";
 }

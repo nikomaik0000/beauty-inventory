@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, Boxes, LayoutList, LogOut, Tags as TagsIcon, Layers } from "lucide-react";
+import { ArrowLeft, Boxes, LayoutList, LogOut, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
 
@@ -10,7 +10,6 @@ const links = [
   { href: "/admin", label: "商品", icon: LayoutList },
   { href: "/admin/categories", label: "分類", icon: Layers },
   { href: "/admin/brands", label: "品牌", icon: Boxes },
-  { href: "/admin/tags", label: "標籤", icon: TagsIcon },
 ];
 
 export function AdminSidebar() {

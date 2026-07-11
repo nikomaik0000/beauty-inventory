@@ -39,6 +39,12 @@ create table if not exists brands (
   created_at timestamptz not null default now()
 );
 
+-- NOTE: as of Phase 2B the app no longer uses tags at all (removed as an
+-- unnecessary feature for a personal-use inventory). These tables are
+-- kept here rather than dropped, in case any data in them matters to
+-- you — see supabase/phase-2b-migration.sql for the app-side capacity
+-- column change, and drop `tags`/`product_tags` yourself whenever
+-- you're comfortable losing that data.
 create table if not exists tags (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
@@ -63,6 +69,7 @@ create table if not exists products (
   opened boolean not null default false,
   opened_date date,
   pao_months integer,
+  capacity numeric, -- plain number, no unit — personal use, the unit is implicit
   quantity integer not null default 1,
   is_favorite boolean not null default false,
   notes text,

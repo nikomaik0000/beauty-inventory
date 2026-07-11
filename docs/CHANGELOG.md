@@ -1,5 +1,28 @@
 # Changelog
 
+## Phase 2B — simplify product data & UX
+- Removed Tags entirely: field, badges, filter, admin management page,
+  and nav link. `tags`/`product_tags` DB tables left in place (unused)
+  rather than dropped.
+- Removed Favorite entirely: field, icon/button, filter, and any
+  favorite-based sorting/toggle logic.
+- Added a single optional numeric `capacity` field (no unit column, no
+  unit displayed) to products, forms, and the admin table.
+- Admin Categories page now shows a live product-count + total-capacity
+  summary per subcategory.
+- Category/Subcategory kept in the database, admin panel, search, and
+  filter — removed from product cards and the list view specifically.
+- Notes now display on the frontend (card + list) whenever present,
+  hidden entirely when empty.
+- Replaced the Favorite heart icon's screen position with a
+  non-interactive Package/PackageOpen icon reflecting the existing
+  `opened` boolean — icon only, no label/tooltip/badge.
+- Fixed leftover English strings in `formatExpiration` /
+  `formatCategoryPath` that were missed in the Phase 2 localization pass.
+- New `supabase/phase-2b-migration.sql` for existing databases (adds
+  `capacity`, drops `is_favorite`); `schema.sql` updated for fresh
+  installs.
+
 ## Phase X — image upload rebuild
 - Root cause of "Upload failed: Bucket not found": Storage setup was
   bundled into `schema.sql` and never reliably created the bucket on
