@@ -1,12 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
-import Image from "next/image";
-import { ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isImageFile, optimizeImageForUpload } from "@/lib/image-optimize";
-import { deleteProductImageByUrl, uploadProductImage } from "@/lib/product-images";
+import { optimizeImageForUpload, validateImageFile, ImageProcessingError } from "@/lib/image-optimize";
+import { deleteProductImageByUrl, uploadProductImage, ImageUploadError } from "@/lib/product-images";
 
+/**
+ * Product image field: click or drag-and-drop to upload, large preview,
+ * replace, delete. Rebuilt from scratch in Phase X.
+ *
+ * Flow: pick a file → instant local preview → validate → resize to
+ * ~800px + WebP in the browser → upload to Supabase Storage → swap the
+ * local preview for the real public URL → best-effort delete the old
+ * image. Every step that can fail surfaces a specific, friendly message
+ * instead of crashing the form.
+ */
 export function ImageUploader({
   value,
   onChange,
@@ -15,46 +24,102 @@ export function ImageUploader({
   onChange: (url: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
+  const localPreviewRef = useRef<string | null>(null);
+
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState("");
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Clean up any object URL we created for the optimistic preview.
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current);
+    };
+  }, []);
+
+  function setOptimisticPreview(file: File | null) {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = null;
+    }
+    if (file) {
+      const url = URL.createObjectURL(file);
+      localPreviewRef.current = url;
+      setLocalPreview(url);
+    } else {
+      setLocalPreview(null);
+    }
+  }
+
   async function handleFile(file: File) {
-    if (!isImageFile(file)) {
-      setError("請選擇圖片檔案。");
+    setError(null);
+
+    try {
+      validateImageFile(file);
+    } catch (err) {
+      setError(err instanceof ImageProcessingError ? err.message : "這張圖片無法使用，請換一張試試。");
       return;
     }
-    setError(null);
+
+    const previousUrl = value;
+    setOptimisticPreview(file);
     setBusy(true);
+
     try {
-      const previousUrl = value;
+      setBusyLabel("處理圖片中…");
       const optimized = await optimizeImageForUpload(file);
+
+      setBusyLabel("上傳中…");
       const url = await uploadProductImage(optimized);
+
       onChange(url);
+      setOptimisticPreview(null);
       if (previousUrl) void deleteProductImageByUrl(previousUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "上傳失敗，請再試一次。");
+      setOptimisticPreview(null);
+      if (err instanceof ImageProcessingError || err instanceof ImageUploadError) {
+        setError(err.message);
+      } else {
+        setError("上傳失敗，請再試一次。");
+      }
     } finally {
       setBusy(false);
+      setBusyLabel("");
     }
   }
 
   function handleDelete() {
     const previousUrl = value;
+    setError(null);
     onChange("");
     if (previousUrl) void deleteProductImageByUrl(previousUrl);
   }
 
+  const displaySrc = localPreview ?? (value || null);
+
   return (
     <div>
       <div
-        onDragOver={(e) => {
+        onDragEnter={(e) => {
           e.preventDefault();
+          dragCounter.current += 1;
           setDragOver(true);
         }}
-        onDragLeave={() => setDragOver(false)}
+        onDragOver={(e) => e.preventDefault()}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          dragCounter.current -= 1;
+          if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setDragOver(false);
+          }
+        }}
         onDrop={(e) => {
           e.preventDefault();
+          dragCounter.current = 0;
           setDragOver(false);
           const file = e.dataTransfer.files?.[0];
           if (file) void handleFile(file);
@@ -64,8 +129,9 @@ export function ImageUploader({
           dragOver && "border-accent bg-accentSoft",
         )}
       >
-        {value ? (
-          <Image src={value} alt="商品圖片預覽" fill sizes="160px" className="object-contain p-2" />
+        {displaySrc ? (
+          // eslint-disable-next-line @next/next/no-img-element -- local blob: preview URLs aren't valid next/image sources
+          <img src={displaySrc} alt="商品圖片預覽" className="h-full w-full object-contain p-2" />
         ) : (
           <button
             type="button"
@@ -73,15 +139,14 @@ export function ImageUploader({
             className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-textMuted transition-colors hover:text-accentStrong"
           >
             <ImagePlus size={22} />
-            <span className="px-3 text-center text-xs leading-snug">
-              點擊上傳或拖曳圖片到此處
-            </span>
+            <span className="px-3 text-center text-xs leading-snug">點擊上傳或拖曳圖片到此處</span>
           </button>
         )}
 
         {busy && (
-          <div className="absolute inset-0 flex items-center justify-center bg-surface/80">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-surface/85">
             <Loader2 size={20} className="animate-spin text-accentStrong" />
+            <span className="text-[11px] text-textSecondary">{busyLabel}</span>
           </div>
         )}
       </div>
@@ -108,12 +173,11 @@ export function ImageUploader({
           <Upload size={13} />
           {value ? "更換圖片" : "上傳圖片"}
         </button>
-        {value && (
+        {value && !busy && (
           <button
             type="button"
-            disabled={busy}
             onClick={handleDelete}
-            className="flex items-center gap-1.5 text-xs font-medium text-danger hover:underline disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-medium text-danger hover:underline"
           >
             <Trash2 size={13} />
             刪除圖片
@@ -122,7 +186,13 @@ export function ImageUploader({
       </div>
 
       <p className="mt-1 text-[11px] text-textMuted">會自動壓縮為 WebP 格式，並縮放至約 800px。</p>
-      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+
+      {error && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-xs text-danger">
+          <AlertCircle size={13} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </p>
+      )}
     </div>
   );
 }

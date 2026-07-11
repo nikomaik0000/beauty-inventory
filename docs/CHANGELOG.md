@@ -1,5 +1,21 @@
 # Changelog
 
+## Phase X — image upload rebuild
+- Root cause of "Upload failed: Bucket not found": Storage setup was
+  bundled into `schema.sql` and never reliably created the bucket on
+  every project. Split into a dedicated, idempotent, self-verifying
+  `supabase/storage-setup.sql`, with a Dashboard fallback documented in
+  the README for setups where the SQL editor can't write to
+  `storage.buckets` directly.
+- Rebuilt `lib/image-optimize.ts`, `lib/product-images.ts`, and
+  `components/admin/image-uploader.tsx` from scratch (not patched):
+  pre-upload validation (format, HEIC/HEIF, size, empty file), specific
+  friendly error messages per failure mode (missing bucket, permission,
+  too large, unsupported format, network), an optimistic local preview
+  while processing/uploading, and a non-flickering drag-and-drop zone.
+- Bucket is now locked to `image/webp` with a 5MB cap (defense in depth
+  — the app only ever uploads a compressed WebP file it just produced).
+
 ## Phase 2 — UI polish
 - Localized all UI text to Traditional Chinese, keeping only "Beauty
   Inventory" and "Personal Skincare Inventory" in English.

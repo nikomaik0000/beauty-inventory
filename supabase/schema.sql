@@ -165,24 +165,6 @@ join (values
 on conflict (category_id, name) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Storage: product images
--- Public bucket (images are optimized/resized client-side to WebP before
--- upload, so there's nothing sensitive in here) with the same public-read
--- / authenticated-write split as every other table.
+-- Storage (product images) is set up separately — see
+-- supabase/storage-setup.sql. Run it right after this file.
 -- ---------------------------------------------------------------------------
-
-insert into storage.buckets (id, name, public)
-values ('product-images', 'product-images', true)
-on conflict (id) do nothing;
-
-create policy "public read product images" on storage.objects
-  for select using (bucket_id = 'product-images');
-
-create policy "admin write product images" on storage.objects
-  for insert with check (bucket_id = 'product-images' and auth.role() = 'authenticated');
-
-create policy "admin update product images" on storage.objects
-  for update using (bucket_id = 'product-images' and auth.role() = 'authenticated');
-
-create policy "admin delete product images" on storage.objects
-  for delete using (bucket_id = 'product-images' and auth.role() = 'authenticated');
