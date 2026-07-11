@@ -1,0 +1,23 @@
+import { redirect } from "next/navigation";
+import { SiteHeader } from "@/components/site-header";
+import { AdminSidebar } from "@/components/admin/sidebar";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-6 sm:flex-row sm:px-6">
+        <AdminSidebar />
+        <div className="min-w-0 flex-1">{children}</div>
+      </main>
+    </div>
+  );
+}
