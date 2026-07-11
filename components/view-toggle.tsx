@@ -6,7 +6,7 @@ import type { ViewMode } from "@/lib/types";
 
 export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
   return (
-    <div className="flex items-center rounded-full border border-border bg-surface p-0.5">
+    <div className="flex shrink-0 items-center rounded-full border border-border bg-surface p-0.5">
       {(
         [
           { mode: "list" as const, icon: List, label: "列表" },
@@ -20,14 +20,13 @@ export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: V
           aria-pressed={mode === opt.mode}
           aria-label={`${opt.label}檢視`}
           className={cn(
-            "flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+            "flex h-8 w-8 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:outline-none focus-visible:ring-0",
             mode === opt.mode
               ? "bg-accentSoft text-accentStrong"
               : "text-textSecondary hover:text-textPrimary",
           )}
         >
-          <opt.icon size={14} />
-          {opt.label}
+          <opt.icon size={15} />
         </button>
       ))}
     </div>

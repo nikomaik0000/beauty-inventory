@@ -108,20 +108,23 @@ export function ProductExplorer({
 
   return (
     <div className="w-full min-w-0">
-      {/* Row 1: search, full width on its own row on mobile.
-          Row 2: filters / sort / view toggle, wrapping freely. */}
+      {/* Row 1: search, full width.
+          Row 2: Filter + Sort on the left, view toggle on the right —
+          vertically aligned, never wraps. */}
       <div className="flex w-full min-w-0 flex-col gap-3">
         <SearchBar value={filters.search} onChange={(v) => setFilters((f) => ({ ...f, search: v }))} />
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterPanel
-            filters={filters}
-            onChange={setFilters}
-            categories={categories}
-            subcategories={subcategories}
-            brands={brands}
-            activeCount={activeFilterCount}
-          />
-          <SortMenu value={sortField} onChange={setSortField} />
+        <div className="flex flex-nowrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <FilterPanel
+              filters={filters}
+              onChange={setFilters}
+              categories={categories}
+              subcategories={subcategories}
+              brands={brands}
+              activeCount={activeFilterCount}
+            />
+            <SortMenu value={sortField} onChange={setSortField} />
+          </div>
           <ViewToggle mode={viewMode} onChange={setViewMode} />
         </div>
       </div>

@@ -1,5 +1,21 @@
 # Changelog
 
+## Phase 3D — toolbar polish (visual only, no functional changes)
+- Removed the left sort icon from the Sort control — just the label and
+  the select's own native dropdown arrow now.
+- View toggle (List/Card) is now truly icon-only, no text labels at any
+  breakpoint, per the "compact segmented control" spec.
+- Removed the focus-visible outline/ring specifically on the toolbar
+  controls (Filter trigger, Sort select, View toggle buttons) via
+  `focus:outline-none focus-visible:outline-none focus-visible:ring-0`
+  on those elements only — the global `:focus-visible` accent outline in
+  `globals.css` is untouched everywhere else (forms, buttons elsewhere),
+  so accessibility outside the toolbar is unaffected.
+- Toolbar row 2 restructured to `Filter + Sort` grouped on the left
+  (shrinkable, no wrap) and the view toggle pinned to the right via
+  `justify-between` + `flex-nowrap`, instead of the previous
+  flex-wrap row — same controls, same behavior, just aligned per spec.
+
 ## Phase 2C — dynamic product summary
 - The "共 X 件商品" line above the product list now also shows total
   capacity: "共 X 件商品 ・ 總容量 XXX". Computed with `useMemo` directly

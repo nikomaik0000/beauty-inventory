@@ -67,7 +67,7 @@ export function FilterPanel({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "flex h-10 items-center gap-2 rounded-xl border border-border bg-surface px-3.5 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted",
+          "flex h-10 shrink-0 items-center gap-2 rounded-xl border border-border bg-surface px-3.5 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted focus:outline-none focus-visible:outline-none focus-visible:ring-0",
           open && "border-accent text-accentStrong",
         )}
       >

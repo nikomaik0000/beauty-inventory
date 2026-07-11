@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowDownUp } from "lucide-react";
 import { Select } from "@/components/ui/input";
 import type { SortField } from "@/lib/types";
 
@@ -15,20 +14,17 @@ const options: { value: SortField; label: string }[] = [
 
 export function SortMenu({ value, onChange }: { value: SortField; onChange: (v: SortField) => void }) {
   return (
-    <div className="relative flex items-center gap-2">
-      <ArrowDownUp size={14} className="pointer-events-none absolute left-3 text-textMuted" />
-      <Select
-        value={value}
-        onChange={(e) => onChange(e.target.value as SortField)}
-        className="pl-8 w-auto min-w-[180px]"
-        aria-label="排序方式"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </Select>
-    </div>
+    <Select
+      value={value}
+      onChange={(e) => onChange(e.target.value as SortField)}
+      className="h-10 w-auto min-w-0 max-w-full focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+      aria-label="排序方式"
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </Select>
   );
 }
