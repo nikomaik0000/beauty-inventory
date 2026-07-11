@@ -1,19 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { defaultFilters } from "@/lib/types";
 import type { Brand, Category, ProductFilters, Subcategory, Tag } from "@/lib/types";
 
+/**
+ * Filter entry point + centered modal dialog.
+ *
+ * Phase 2A: replaced the old dropdown/drawer (which could render partly
+ * off-screen) with a modal that's always centered and always capped to
+ * the viewport, on every screen size. Edits are staged locally and only
+ * committed to the parent when "套用" (Apply) is pressed, so "取消"
+ * (Cancel) can cleanly discard them.
+ *
+ * `tags` stays in the prop type (unused here) so the caller doesn't need
+ * to change — this pass only touches the filter UI itself.
+ */
 export function FilterPanel({
   filters,
   onChange,
   categories,
   subcategories,
   brands,
-  tags,
   activeCount,
 }: {
   filters: ProductFilters;
@@ -25,38 +37,41 @@ export function FilterPanel({
   activeCount: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<ProductFilters>(filters);
 
-  const visibleSubcategories = filters.categoryId
-    ? subcategories.filter((s) => s.category_id === filters.categoryId)
+  // Re-sync the draft to whatever is currently applied every time the
+  // modal opens, so stale edits from a previous open (that were
+  // cancelled) never resurface.
+  useEffect(() => {
+    if (open) setDraft(filters);
+  }, [open, filters]);
+
+  const visibleSubcategories = draft.categoryId
+    ? subcategories.filter((s) => s.category_id === draft.categoryId)
     : subcategories;
 
   function update<K extends keyof ProductFilters>(key: K, value: ProductFilters[K]) {
-    onChange({ ...filters, [key]: value });
+    setDraft((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleTag(id: string) {
-    const has = filters.tagIds.includes(id);
-    update("tagIds", has ? filters.tagIds.filter((t) => t !== id) : [...filters.tagIds, id]);
+  function handleClearAll() {
+    setDraft({ ...defaultFilters, search: filters.search });
   }
 
-  function reset() {
-    onChange({
-      search: filters.search,
-      categoryId: null,
-      subcategoryId: null,
-      brandId: null,
-      tagIds: [],
-      openedStatus: "all",
-      favoritesOnly: false,
-      expiringSoonOnly: false,
-    });
+  function handleApply() {
+    onChange(draft);
+    setOpen(false);
+  }
+
+  function handleCancel() {
+    setOpen(false);
   }
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(true)}
         className={cn(
           "flex h-10 items-center gap-2 rounded-xl border border-border bg-surface px-3.5 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted",
           open && "border-accent text-accentStrong",
@@ -72,37 +87,34 @@ export function FilterPanel({
       </button>
 
       {open && (
-        <>
-          {/* Mobile backdrop — tapping outside closes the drawer */}
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+          {/* Dimmed backdrop, always on, on every breakpoint */}
           <button
             type="button"
             aria-label="關閉篩選"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-20 bg-textPrimary/20 sm:hidden"
+            onClick={handleCancel}
+            className="absolute inset-0 bg-textPrimary/30"
           />
 
           <div
-            className={cn(
-              "z-30 rounded-card border border-border bg-surface p-5 shadow-cardHover",
-              // Mobile: fixed, centered drawer that never exceeds the viewport.
-              "fixed left-1/2 top-1/2 w-[calc(100vw-2rem)] max-w-[340px] max-h-[80vh] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
-              // Desktop: anchored dropdown under the trigger button.
-              "sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[320px] sm:max-h-none sm:translate-x-0 sm:translate-y-0",
-            )}
+            role="dialog"
+            aria-modal="true"
+            aria-label="篩選"
+            className="relative flex max-h-[85vh] w-full max-w-sm flex-col rounded-card border border-border bg-surface shadow-cardHover"
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-divider px-5 py-4">
               <h3 className="text-sm font-semibold text-textPrimary">篩選</h3>
-              <button type="button" onClick={() => setOpen(false)} aria-label="關閉篩選" className="text-textMuted hover:text-textPrimary">
+              <button type="button" onClick={handleCancel} aria-label="關閉篩選" className="text-textMuted hover:text-textPrimary">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-textSecondary">大分類</label>
                 <Select
-                  value={filters.categoryId ?? ""}
-                  onChange={(e) => onChange({ ...filters, categoryId: e.target.value || null, subcategoryId: null })}
+                  value={draft.categoryId ?? ""}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, categoryId: e.target.value || null, subcategoryId: null }))}
                 >
                   <option value="">全部分類</option>
                   {categories.map((c) => (
@@ -114,7 +126,7 @@ export function FilterPanel({
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-textSecondary">小分類</label>
                 <Select
-                  value={filters.subcategoryId ?? ""}
+                  value={draft.subcategoryId ?? ""}
                   onChange={(e) => update("subcategoryId", e.target.value || null)}
                   disabled={visibleSubcategories.length === 0}
                 >
@@ -127,7 +139,7 @@ export function FilterPanel({
 
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-textSecondary">品牌</label>
-                <Select value={filters.brandId ?? ""} onChange={(e) => update("brandId", e.target.value || null)}>
+                <Select value={draft.brandId ?? ""} onChange={(e) => update("brandId", e.target.value || null)}>
                   <option value="">全部品牌</option>
                   {brands.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}</option>
@@ -137,61 +149,30 @@ export function FilterPanel({
 
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-textSecondary">開封狀態</label>
-                <Select value={filters.openedStatus} onChange={(e) => update("openedStatus", e.target.value as ProductFilters["openedStatus"])}>
+                <Select value={draft.openedStatus} onChange={(e) => update("openedStatus", e.target.value as ProductFilters["openedStatus"])}>
                   <option value="all">全部</option>
                   <option value="opened">僅已開封</option>
                   <option value="unopened">僅未開封</option>
                 </Select>
               </div>
-
-              {tags.length > 0 && (
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-textSecondary">標籤</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.map((t) => {
-                      const active = filters.tagIds.includes(t.id);
-                      return (
-                        <button key={t.id} type="button" onClick={() => toggleTag(t.id)}>
-                          <Badge tone={active ? "accent" : "default"} className={cn("cursor-pointer", active && "ring-1 ring-accent")}>
-                            {t.name}
-                          </Badge>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2.5 border-t border-divider pt-4">
-                <label className="flex items-center gap-2 text-sm text-textSecondary">
-                  <input
-                    type="checkbox"
-                    checked={filters.favoritesOnly}
-                    onChange={(e) => update("favoritesOnly", e.target.checked)}
-                    className="h-4 w-4 rounded border-border accent-accent"
-                  />
-                  僅顯示收藏
-                </label>
-                <label className="flex items-center gap-2 text-sm text-textSecondary">
-                  <input
-                    type="checkbox"
-                    checked={filters.expiringSoonOnly}
-                    onChange={(e) => update("expiringSoonOnly", e.target.checked)}
-                    className="h-4 w-4 rounded border-border accent-accent"
-                  />
-                  即將到期
-                </label>
-              </div>
             </div>
 
-            {activeCount > 0 && (
-              <button type="button" onClick={reset} className="mt-4 text-xs font-medium text-accentStrong hover:underline">
-                清除所有篩選
+            <div className="flex items-center justify-between gap-2 border-t border-divider px-5 py-4">
+              <button type="button" onClick={handleClearAll} className="text-xs font-medium text-accentStrong hover:underline">
+                清除全部
               </button>
-            )}
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={handleCancel}>
+                  取消
+                </Button>
+                <Button type="button" size="sm" onClick={handleApply}>
+                  套用
+                </Button>
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }
