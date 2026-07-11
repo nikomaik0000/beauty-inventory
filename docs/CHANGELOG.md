@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 2C — dynamic product summary
+- The "共 X 件商品" line above the product list now also shows total
+  capacity: "共 X 件商品 ・ 總容量 XXX". Computed with `useMemo` directly
+  from `sorted` — the same filtered/sorted array already rendered below
+  — so no extra query, and it updates live with search/category/
+  subcategory/brand/opened-status changes.
+- Capacity is summed only over products with a real capacity set
+  (`capacity != null && capacity > 0`); products with an empty capacity
+  are skipped, not treated as 0. If nothing currently on screen has a
+  capacity, the total shows "—" instead of "0".
+
 ## Phase 2B — simplify product data & UX
 - Removed Tags entirely: field, badges, filter, admin management page,
   and nav link. `tags`/`product_tags` DB tables left in place (unused)

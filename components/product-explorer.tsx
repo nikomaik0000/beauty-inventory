@@ -93,6 +93,19 @@ export function ProductExplorer({
     return idx < 0 ? 0 : idx;
   };
 
+  // Reuses `sorted` — the same filtered/sorted list already rendered
+  // below — so this never triggers another query and always matches
+  // what's on screen. Capacity is only summed for products that
+  // actually have one set; an empty/null capacity is skipped rather
+  // than counted as 0, and if nothing on screen has a capacity at all
+  // the total shows "—" instead of "0".
+  const totalCapacityLabel = useMemo(() => {
+    const withCapacity = sorted.filter((p) => p.capacity != null && p.capacity > 0);
+    if (withCapacity.length === 0) return "—";
+    const sum = withCapacity.reduce((total, p) => total + (p.capacity ?? 0), 0);
+    return String(sum);
+  }, [sorted]);
+
   return (
     <div className="w-full min-w-0">
       {/* Row 1: search, full width on its own row on mobile.
@@ -113,7 +126,7 @@ export function ProductExplorer({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-textMuted">共 {sorted.length} 件商品</p>
+      <p className="mt-4 text-xs text-textMuted">共 {sorted.length} 件商品 ・ 總容量 {totalCapacityLabel}</p>
 
       {sorted.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
