@@ -49,21 +49,7 @@ export interface ProductWithRelations extends Product {
 
 export type ViewMode = "list" | "card";
 
-export type SortField =
-  | "expiration"
-  | "brand"
-  | "name"
-  | "created_at"
-  | "updated_at"
-  | "quantity";
-
-export type SortDirection = "asc" | "desc";
-
-export interface SortOption {
-  field: SortField;
-  direction: SortDirection;
-  label: string;
-}
+export type SortField = "expiration" | "brand" | "updated_at" | "quantity";
 
 export interface ProductFilters {
   search: string;

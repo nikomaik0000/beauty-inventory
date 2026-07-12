@@ -1,5 +1,46 @@
 # Changelog
 
+## Phase 3F — sorting UI polish
+- Trimmed sort options to four: 效期 (default), 品牌, 更新, 庫存. Removed
+  商品名稱 and 新增日期 (`SortField` type, the sort switch-case in
+  `product-explorer.tsx`, and the now-fully-dead `SortDirection`/
+  `SortOption` types that were never actually used anywhere).
+- Sort trigger now shows only the selected field's name — no direction
+  ("近→遠", "A→Z", …) ever surfaces in the UI; direction stays internal
+  to the sort logic.
+- Rebuilt as a self-contained dropdown (not the shared `Dropdown` used
+  by the filter dialog, since this phase was scoped to "only the
+  sorting component" — the filter dialog's look/behavior is untouched):
+  macOS-menu styling (rounded corners, soft shadow, comfortable inset
+  padding, hover highlight), checkmark on the left of the selected item
+  only, click an option to apply it and close immediately, fade-only
+  animation (no slide/scale/bounce).
+
+## Phase 3E — global design system
+- Root-caused and fixed the focus-ring radius bug: the global
+  `:focus-visible` rule was force-applying `border-radius: 4px` to every
+  focused element regardless of its real shape. Removed that override
+  and switched to a semi-transparent focus ring color, applied globally
+  (buttons, inputs, search, dropdowns, toolbar, admin forms) with no
+  per-component overrides anywhere.
+- Centralized radius/shadow/duration/typography as CSS variables in
+  `globals.css` (same pattern colors already used), wired into
+  `tailwind.config.ts`. All values unchanged from before — architecture
+  only, no visual redesign. Added `lib/design-system.ts` as the JS-side
+  mirror (re-exports `lib/theme.ts`, adds radius/typography/shadow/
+  animation constants).
+- New shared components: `components/ui/card.tsx` (Card/HoverCard),
+  `dialog.tsx`, `dropdown.tsx` (Dropdown/DropdownField), and
+  `toolbar-button.tsx`.
+- Replaced native `<select>` with the custom `Dropdown` in the Sort
+  control (now icon-only, selected value shown only inside the popup)
+  and all four filter-dialog selects.
+- Adopted `Card`/`HoverCard` in product cards, the list-view table, and
+  the admin product table.
+- Fixed in passing: product-card image placeholder was reading
+  `theme.light.*` directly, ignoring dark mode; login form still
+  mentioned Tags (removed in Phase 2B).
+
 ## Phase 3D — toolbar polish (visual only, no functional changes)
 - Removed the left sort icon from the Sort control — just the label and
   the select's own native dropdown arrow now.

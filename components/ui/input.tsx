@@ -2,7 +2,7 @@ import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type T
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
-  "w-full rounded-xl border border-border bg-surface px-3.5 h-10 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors";
+  "w-full rounded-input border border-border bg-surface px-3.5 h-10 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => (

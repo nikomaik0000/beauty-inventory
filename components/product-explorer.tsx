@@ -72,10 +72,6 @@ export function ProductExplorer({
         }
         case "brand":
           return (a.brand?.name ?? "\uffff").localeCompare(b.brand?.name ?? "\uffff");
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "created_at":
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "updated_at":
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case "quantity":

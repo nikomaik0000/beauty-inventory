@@ -2,6 +2,7 @@
 
 import { Package, PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { formatCapacity, formatExpiration, getExpirationStatus } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
 
@@ -16,7 +17,7 @@ const statusTone = {
 
 export function ProductListTable({ products }: { products: ProductWithRelations[] }) {
   return (
-    <div className="rounded-card border border-border bg-surface shadow-card">
+    <Card>
       {/* Desktop / tablet: a real compact table. Hidden below sm to avoid
           any risk of horizontal overflow on narrow phones. */}
       <table className="hidden w-full text-left text-sm sm:table">
@@ -88,6 +89,6 @@ export function ProductListTable({ products }: { products: ProductWithRelations[
           );
         })}
       </ul>
-    </div>
+    </Card>
   );
 }

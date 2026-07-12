@@ -13,6 +13,7 @@ import {
 import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { deleteProduct } from "@/app/actions/products";
 import { formatCapacity, formatCategoryPath, formatExpiration, getExpirationStatus } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
@@ -123,7 +124,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
   }
 
   return (
-    <div className="rounded-card border border-border bg-surface shadow-card">
+    <Card>
       {/* Tablet / desktop: full data table inside a bounded scroll region. */}
       <div className="scroll-x-region hidden lg:block">
         <table className="w-full min-w-[780px] text-left text-sm">
@@ -212,6 +213,6 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           );
         })}
       </ul>
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,13 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Every value below reads from the CSS variables defined in
+ * app/globals.css — nothing here is a hardcoded literal. To change a
+ * color, radius, shadow, duration, or easing across the whole app,
+ * edit the variable in globals.css (and lib/design-system.ts, which
+ * mirrors the few values components need as plain JS). This file just
+ * wires those variables into Tailwind utility class names.
+ */
 const config: Config = {
   darkMode: "class",
   content: [
@@ -30,18 +38,38 @@ const config: Config = {
         success: "var(--color-success)",
         warning: "var(--color-warning)",
         warningSoft: "var(--color-warning-soft)",
+        focusRing: "var(--color-focus-ring)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],
       },
+      fontSize: {
+        heading: ["var(--text-heading)", { lineHeight: "var(--text-heading-line-height)", letterSpacing: "var(--text-heading-letter-spacing)" }],
+        body: ["var(--text-body)", { lineHeight: "var(--text-body-line-height)" }],
+        small: ["var(--text-small)", { lineHeight: "var(--text-small-line-height)" }],
+      },
       borderRadius: {
-        card: "14px",
-        badge: "999px",
+        button: "var(--radius-button)",
+        input: "var(--radius-input)",
+        card: "var(--radius-card)",
+        dropdown: "var(--radius-dropdown)",
+        dialog: "var(--radius-dialog)",
+        badge: "var(--radius-badge)",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(60, 45, 30, 0.06), 0 1px 1px rgba(60, 45, 30, 0.04)",
-        cardHover: "0 4px 14px rgba(60, 45, 30, 0.10)",
+        card: "var(--shadow-card)",
+        cardHover: "var(--shadow-card-hover)",
+        dropdown: "var(--shadow-dropdown)",
+        dialog: "var(--shadow-dialog)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        standard: "var(--ease-standard)",
       },
     },
   },

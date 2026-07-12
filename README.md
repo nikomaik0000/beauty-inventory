@@ -125,9 +125,34 @@ home-screen icon when installed.
 
 ## How it's organized
 
-- `lib/theme.ts` — every color token, light and dark, mirrored into CSS
-  variables in `app/globals.css`. No component should hardcode a hex
-  value or use an arbitrary Tailwind bracket value; add a token instead.
+- **Design system** — `app/globals.css` is the single source of truth:
+  every color, border radius, shadow, and transition duration used
+  anywhere in the app is a CSS variable defined there (with a `.dark`
+  pair for each). `tailwind.config.ts` wires those variables into
+  Tailwind class names (`bg-accent`, `rounded-card`, `shadow-dropdown`,
+  `duration-base`, …) — it holds no literal color/radius/shadow values
+  itself. `lib/theme.ts` keeps the color tokens as a typed JS object for
+  the few places that need one (e.g. category accent colors); `lib/
+  design-system.ts` re-exports that and adds the radius/typography/
+  shadow/animation side as plain JS/TS, mirroring the CSS variables for
+  things like Framer Motion transitions that can't read a CSS custom
+  property directly. Changing a value in `globals.css` (and its JS twin
+  in `design-system.ts` for animation durations) updates the whole app.
+  No component should hardcode a hex value, shadow, or arbitrary
+  Tailwind bracket value — reach for a token instead.
+  *(The phase that introduced this suggested a `src/styles/` +
+  `src/components/ui/` layout; this project never had a `src/`
+  directory, so the same idea was adapted to fit where the code already
+  lives — tokens in `lib/`, shared components in `components/ui/` —
+  rather than restructuring the whole app to introduce one.)*
+- **Shared UI components** (`components/ui/`) — `button.tsx`, `input.tsx`
+  (Input/Textarea/Select), `badge.tsx`, `card.tsx` (Card/HoverCard),
+  `dialog.tsx` (the centered-modal chrome, used by the filter dialog),
+  `dropdown.tsx` (Dropdown + DropdownField — the custom popup that
+  replaced native `<select>` in the toolbar and filter dialog), and
+  `toolbar-button.tsx` (the shared Filter/Sort trigger shape). These are
+  what the app should reach for instead of styling a one-off control
+  per page.
 - `lib/types.ts` — the shared domain model (`Product`, `Category`, …).
 - `lib/queries.ts` — server-side Supabase reads, including the joined
   `ProductWithRelations` shape used everywhere in the UI.
@@ -261,4 +286,54 @@ rebuilt rather than patched:
   `formatCategoryPath` in `lib/utils.ts` still had English fallback
   strings ("No expiration", "Unknown", "Uncategorized") left over from
   the Phase 2 localization pass — those are now Traditional Chinese too.
+
+## Phase 3E notes — global design system
+
+- **Root-caused the "shape changes on click" bug.** The global
+  `:focus-visible` rule in `globals.css` was force-applying
+  `border-radius: 4px` to *every* focused element, regardless of that
+  element's actual radius (a `rounded-button` pill vs a `rounded-input`
+  box vs a `rounded-card` panel). That mismatch was what made controls
+  look like they changed shape on focus/click. The fix removes that
+  override entirely — the focus outline now follows each element's own
+  radius — and the ring itself is now a semi-transparent
+  `--color-focus-ring` rather than a solid accent color, so it reads as
+  "extremely subtle" everywhere (buttons, inputs, search, dropdowns,
+  toolbar, admin forms) from one shared rule, with no per-component
+  overrides left anywhere in the codebase.
+- **Radius/shadow/duration are now CSS variables**, the same pattern
+  colors already used: `--radius-{button,input,card,dropdown,dialog,
+  badge}`, `--shadow-{card,card-hover,dropdown,dialog}`,
+  `--duration-{fast,base,slow}`, `--ease-standard`, wired into
+  `tailwind.config.ts` as `rounded-*` / `shadow-*` / `duration-*` /
+  `ease-standard` classes. Every value is unchanged from before this
+  phase (e.g. `rounded-button` is still exactly `9999px`, the old
+  `rounded-full`) — this phase is architecture, not a visual redesign.
+- **Sort button**: icon-only trigger (no text, no visible selected
+  value); opens the same custom dropdown as everywhere else; the
+  selected option is only ever indicated inside the dropdown, via a
+  checkmark.
+- **Custom `Dropdown`/`DropdownField`** (`components/ui/dropdown.tsx`)
+  replaced the native `<select>` in the Sort control and all four
+  filters in the filter dialog (category, subcategory, brand, opened
+  status) — consistent colors, radius, hover state, selected-item
+  checkmark, and popup animation across both. Native `<select>` is
+  still used in the product form and admin taxonomy pages (categories/
+  subcategories are edited there, not browsed) — out of scope for this
+  pass since it's not part of the toolbar; happy to extend `Dropdown` to
+  those too on request.
+- **New shared primitives**: `Card`/`HoverCard` (adopted by product
+  cards, the list-view table, and the admin product table), `Dialog`
+  (the filter modal's chrome, with the same popup animation as
+  `Dropdown`), and `ToolbarButton` (Filter and Sort's shared trigger
+  shape — same height/padding/radius/hover, so they can never drift
+  apart visually again).
+- Fixed a real (if small) dark-mode bug found while touching this code:
+  the product-card image placeholder was reading `theme.light.border` /
+  `theme.light.accentSoft` directly via inline styles, so it never
+  actually responded to dark mode. Swapped to the `border-border
+  bg-accentSoft` Tailwind classes, which already resolve through the
+  CSS variables correctly in both themes.
+- Also fixed a stale copy bug in the login form ("…品牌與標籤" still
+  mentioned Tags, which Phase 2B removed).
 

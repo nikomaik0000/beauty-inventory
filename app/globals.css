@@ -2,10 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   Design System — CSS variable layer
+   This is the single source of truth for color, radius, shadow, and
+   transition values. tailwind.config.ts reads every one of these via
+   var(--…) rather than hardcoding literals, so changing a value here
+   (or its dark-mode pair below) updates the whole app — no per-component
+   edits required. lib/design-system.ts mirrors this file for the few
+   places a JS value is needed (e.g. Framer Motion transitions).
+   ========================================================================== */
+
 :root {
+  /* Typography */
   --font-sans: "Inter", system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
+  --text-heading: 1.25rem;
+  --text-heading-line-height: 1.3;
+  --text-heading-letter-spacing: -0.01em;
+  --text-body: 0.875rem;
+  --text-body-line-height: 1.6;
+  --text-small: 0.75rem;
+  --text-small-line-height: 1.5;
 
+  /* Color */
   --color-background: #FAF8F4;
   --color-surface: #FFFFFF;
   --color-surface-muted: #F4EFE6;
@@ -26,6 +45,38 @@
   --color-success: #5F7A5C;
   --color-warning: #B98C4C;
   --color-warning-soft: #F3E8D3;
+
+  /* Border radius — one value per control family, reused by every
+     component in that family so nothing drifts out of sync. */
+  --radius-button: 9999px;
+  --radius-input: 0.75rem;
+  --radius-card: 14px;
+  --radius-dropdown: 0.75rem;
+  --radius-dialog: 14px;
+  --radius-badge: 9999px;
+
+  /* Shadow */
+  --shadow-card: 0 1px 2px rgba(60, 45, 30, 0.06), 0 1px 1px rgba(60, 45, 30, 0.04);
+  --shadow-card-hover: 0 4px 14px rgba(60, 45, 30, 0.10);
+  --shadow-dropdown: 0 8px 24px rgba(60, 45, 30, 0.12);
+  --shadow-dialog: 0 12px 32px rgba(60, 45, 30, 0.16);
+
+  /* Animation */
+  --duration-fast: 120ms;
+  --duration-base: 150ms;
+  --duration-slow: 200ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Focus ring — deliberately subtle everywhere (buttons, inputs,
+     search, dropdowns, toolbar, admin forms all resolve to this one
+     rule). Semi-transparent on purpose, so the interface looks almost
+     identical before/after focus. No border-radius override here: the
+     outline follows each element's own radius instead of forcing a
+     mismatched one, which was the cause of controls appearing to
+     change shape on focus/click. */
+  --focus-ring-width: 1.5px;
+  --focus-ring-offset: 1px;
+  --color-focus-ring: rgba(166, 137, 101, 0.5);
 }
 
 .dark {
@@ -49,6 +100,12 @@
   --color-success: #8DAE87;
   --color-warning: #DBB16C;
   --color-warning-soft: #3C3016;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.22), 0 1px 1px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.30);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.34);
+  --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.42);
+  --color-focus-ring: rgba(203, 170, 128, 0.5);
 }
 
 * {
@@ -68,18 +125,18 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
-  line-height: 1.55;
+  line-height: var(--text-body-line-height);
   overflow-x: hidden;
   max-width: 100vw;
 }
 
 h1, h2, h3 {
-  letter-spacing: -0.01em;
-  line-height: 1.3;
+  letter-spacing: var(--text-heading-letter-spacing);
+  line-height: var(--text-heading-line-height);
 }
 
 p {
-  line-height: 1.6;
+  line-height: var(--text-body-line-height);
 }
 
 ::selection {
@@ -87,11 +144,14 @@ p {
   color: var(--color-text-primary);
 }
 
-/* Visible keyboard focus, kept subtle but unmistakable */
+/* Subtle keyboard focus. Every interactive element in the app — button,
+   input, search, dropdown, toolbar control, admin form field — resolves
+   to this single rule, with no per-component radius override, so the
+   ring always follows the element's real shape instead of visually
+   changing it. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: var(--focus-ring-width) solid var(--color-focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (prefers-reduced-motion: reduce) {

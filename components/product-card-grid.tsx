@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { Package, PackageOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { categoryAccent, productImageSize, theme } from "@/lib/theme";
+import { HoverCard } from "@/components/ui/card";
+import { categoryAccent, productImageSize } from "@/lib/theme";
 import { formatCapacity, formatExpiration, getExpirationStatus, initials } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
 
@@ -27,15 +28,10 @@ export function ProductCardGrid({
   const capacityText = formatCapacity(product.capacity);
 
   return (
-    <div className="flex h-full gap-3.5 rounded-card border border-border bg-surface p-4 shadow-card transition-shadow hover:shadow-cardHover">
+    <HoverCard className="flex h-full gap-3.5 p-4">
       <div
-        className="relative shrink-0 overflow-hidden rounded-xl border"
-        style={{
-          width: productImageSize,
-          height: productImageSize,
-          borderColor: theme.light.border,
-          backgroundColor: theme.light.accentSoft,
-        }}
+        className="relative shrink-0 overflow-hidden rounded-input border border-border bg-accentSoft"
+        style={{ width: productImageSize, height: productImageSize }}
       >
         {product.image_url ? (
           <Image
@@ -76,6 +72,6 @@ export function ProductCardGrid({
           <p className="note-preview mt-2 line-clamp-2 text-xs text-textMuted">{product.notes}</p>
         )}
       </div>
-    </div>
+    </HoverCard>
   );
 }
