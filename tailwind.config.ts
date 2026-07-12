@@ -43,6 +43,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],
+        serifCjk: ["var(--font-serif-cjk)"],
       },
       fontSize: {
         heading: ["var(--text-heading)", { lineHeight: "var(--text-heading-line-height)", letterSpacing: "var(--text-heading-letter-spacing)" }],

@@ -16,6 +16,7 @@
   /* Typography */
   --font-sans: "Inter", system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
+  --font-serif-cjk: "Songti SC", "Apple LiSong", "Noto Serif TC", serif;
   --text-heading: 1.25rem;
   --text-heading-line-height: 1.3;
   --text-heading-letter-spacing: -0.01em;
@@ -50,7 +51,7 @@
      component in that family so nothing drifts out of sync. */
   --radius-button: 9999px;
   --radius-input: 0.75rem;
-  --radius-card: 14px;
+  --radius-card: 12px;
   --radius-dropdown: 0.75rem;
   --radius-dialog: 14px;
   --radius-badge: 9999px;

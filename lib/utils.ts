@@ -50,6 +50,22 @@ export function formatExpiration(product: Pick<Product, "expiration_type" | "exp
   return formatted;
 }
 
+/** Compact "2028.06.30" style date, with the same 無期限/未知 fallbacks
+ * as formatExpiration — used on the product card, which deliberately
+ * shows the date plainly (no "(expired)" suffix, no urgency framing;
+ * that's still handled separately by getExpirationStatus wherever a
+ * status color is actually wanted, e.g. the list view). */
+export function formatExpirationCompact(product: Pick<Product, "expiration_type" | "expiration_date">): string {
+  if (product.expiration_type === "none") return "無期限";
+  if (product.expiration_type === "unknown" || !product.expiration_date) return "未知";
+
+  const date = new Date(product.expiration_date);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}.${mm}.${dd}`;
+}
+
 /** Plain number, no unit — 0/empty is treated as "not set" and should
  * never be displayed (matches the product form: leaving Capacity empty
  * shows nothing rather than a 0). */

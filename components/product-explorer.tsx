@@ -137,7 +137,7 @@ export function ProductExplorer({
           <ProductListTable products={sorted} />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
               <ProductCardGrid product={p} categoryIndex={categoryIndexOf(p.category_id)} />

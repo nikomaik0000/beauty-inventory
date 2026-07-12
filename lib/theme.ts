@@ -87,5 +87,7 @@ export const expirationThresholds = {
 } as const;
 
 /** Fixed product-image container size shared by every surface that
- * displays a product image, per the Phase 2 image spec. */
-export const productImageSize = 88;
+ * displays a product image (currently just the grid card). Sized to
+ * match the Phase 4A mockup's proportions — larger and more prominent
+ * than the original 88px, still fixed/identical across every card. */
+export const productImageSize = 120;

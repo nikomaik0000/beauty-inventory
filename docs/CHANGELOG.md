@@ -1,5 +1,86 @@
 # Changelog
 
+## Phase 4A (fine-tune) — typography & spacing pass
+- Card grid gap: 14px → 28px (`gap-3.5` → `gap-7`), both directions, to
+  match Birthday Rewards' breathing room.
+- Card padding: 20px → 28px (`p-5` → `p-7`).
+- Title: `text-base` (16px) → `text-[15px]`, font family and letter
+  spacing unchanged.
+- Notes line-height: `leading-relaxed` (1.625) → `leading-[1.6]`.
+- Labels (品牌/容量): left as `text-xs` / `font-medium` /
+  `text-textMuted` — already matched the "subtle, not bold, medium
+  gray, values stay stronger" ask from the previous pass, so nothing to
+  change. Kept the shared `textMuted` token rather than hardcoding the
+  suggested `#8f887f` (already a close match, and a one-off hex here
+  would undercut the whole "no hardcoded values, reference the design
+  system" point of Phase 3E) — flagged rather than silently substituted.
+
+## Phase 4A (final) — product card matched to mockup
+- Card radius changed to the explicitly specified 12px (shared
+  `--radius-card` token, was 14px) — this time the brief gave an exact,
+  unambiguous value as "the design specification," unlike the earlier
+  generic radius recommendations that conflicted with "don't redesign."
+- Product title now uses a dedicated CJK serif stack (`"Songti SC",
+  "Apple LiSong", "Noto Serif TC", serif` — new `--font-serif-cjk`
+  token), regular/medium weight (not bold), `tracking-[0.05em]`. Noto
+  Serif TC is loaded as a plain `<link>` stylesheet (not `next/font`,
+  to avoid guessing at a Google Fonts subset name we can't verify
+  without a live fetch) as a fallback for non-Apple platforms; on
+  macOS/iOS the system fonts are used directly. Every other card string
+  stays on the existing sans-serif.
+- Added a hairline (`border-t-[0.5px]`) divider between title and
+  content.
+- Product image bumped from 88px to 120px (`productImageSize` in
+  `lib/theme.ts`, its only consumer) to match the mockup's proportions,
+  white background instead of the previous accent-tinted one, border
+  and corner radius unchanged.
+- Volume and Stock are now on one row: Volume as a plain label/value
+  (hidden together if not set), Stock immediately after as a small
+  fixed-size rounded-rectangle badge (no "庫存" label) — always shown,
+  even when Volume isn't set.
+- Notes moved into the same column as Brand/Volume (not spanning the
+  full card width under the image), `line-clamp-3`, hidden completely
+  when empty.
+- Expiration (📅 2028.06.30, still neutral/no urgency color) and the
+  Package/PackageOpen status icon now share the bottom row, aligned
+  left/right — the status icon is back after being removed in the
+  previous pass, per this mockup's explicit "keep the package icon"
+  instruction.
+
+## Phase 4A (superseded) — product card polish
+- Rebuilt `ProductCardGrid`'s internal layout only (still a `HoverCard`,
+  still 88px image, still no redesign): Name full-width at the top
+  (bumped to `font-bold` as the clear focal point), then an image-left /
+  info-right row, then Notes only when present, then a plain
+  (non-colored) expiration date pinned to the bottom-left with a
+  calendar icon.
+- Brand/Volume(capacity)/Stock(quantity) are now a plain label→value
+  list — no badge/background/border, lighter-gray label, darker+bold
+  value, all rows left-aligned on a shared label column so they line up
+  neatly. Rows are hidden individually when empty (brand, capacity) —
+  quantity always has a value so it always shows.
+- Volume and Stock show only the bare number (no unit, no "×", no "Qty
+  ") — reuses the existing `formatCapacity` (still hides 0/empty) and
+  just prints `quantity` directly.
+- New `formatExpirationCompact` in `lib/utils.ts`: dot-notation
+  `2028.06.30`, same 無期限/未知 fallbacks as `formatExpiration`, no
+  "(expired)" suffix and no urgency-colored badge — this card
+  intentionally shows the date plainly. `getExpirationStatus` /
+  `formatExpiration` are untouched and still drive the colored badges
+  in the list view and admin table.
+- Removed the Opened/Unopened status icon from this card (it occupied
+  the same top-right slot the old Favorite heart used to, and isn't
+  part of the new information hierarchy) — the underlying `opened` data
+  and its display elsewhere (list view, admin) are unaffected.
+- Left the shared radius tokens (button/input/dropdown = pill/12px,
+  card = 14px) as they are. The brief's "Buttons 10px / Inputs 10px /
+  Dropdowns 10px" would mean re-shaping every button and form control
+  app-wide — out of scope for a phase scoped to "only polish the card,"
+  and in tension with "keep the existing visual language." Card radius
+  (14px) is already close enough to the requested 12px that changing
+  the shared token wasn't worth the ripple risk. Happy to revisit either
+  as its own explicit phase.
+
 ## Phase 3F — sorting UI polish
 - Trimmed sort options to four: 效期 (default), 品牌, 更新, 庫存. Removed
   商品名稱 and 新增日期 (`SortField` type, the sort switch-case in
