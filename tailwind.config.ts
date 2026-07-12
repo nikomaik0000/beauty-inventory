@@ -24,6 +24,8 @@ const config: Config = {
         border: "var(--color-border)",
         divider: "var(--color-divider)",
         textPrimary: "var(--color-text-primary)",
+        textHeading: "var(--color-text-heading)",
+        textLabel: "var(--color-text-label)",
         textSecondary: "var(--color-text-secondary)",
         textMuted: "var(--color-text-muted)",
         accent: "var(--color-accent)",

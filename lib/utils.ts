@@ -74,6 +74,18 @@ export function formatCapacity(capacity: number | null | undefined): string | nu
   return String(capacity);
 }
 
+/** A single product's contribution to "總容量" (total volume): volume ×
+ * stock, not just volume — 10 units of a 50ml product contribute 500,
+ * not 50. Empty/null/invalid volume or stock is treated as 0, per spec,
+ * rather than skipping the product. The single source of truth for this
+ * formula — both the homepage summary and the admin Categories page's
+ * per-subcategory summary use it, so they can't drift out of sync. */
+export function volumeContribution(product: { capacity: number | null; quantity: number | null }): number {
+  const capacity = Number(product.capacity) || 0;
+  const quantity = Number(product.quantity) || 0;
+  return capacity * quantity;
+}
+
 /** Computes a projected "use by" date from an opened date + PAO window,
  * for display as a secondary hint alongside the printed expiration date. */
 export function projectedPaoExpiry(openedDateIso: string, paoMonths: number): string {

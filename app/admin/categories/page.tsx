@@ -13,7 +13,7 @@ import {
   renameSubcategory,
 } from "@/app/actions/taxonomy";
 import { createClient } from "@/lib/supabase/client";
-import { formatCapacity } from "@/lib/utils";
+import { formatCapacity, volumeContribution } from "@/lib/utils";
 import type { Category, Subcategory } from "@/lib/types";
 
 interface SubcategorySummary {
@@ -37,20 +37,21 @@ export default function CategoriesAdminPage() {
     const [{ data: cats }, { data: subs }, { data: products }] = await Promise.all([
       supabase.from("categories").select("*").order("sort_order"),
       supabase.from("subcategories").select("*").order("sort_order"),
-      supabase.from("products").select("subcategory_id, capacity"),
+      supabase.from("products").select("subcategory_id, capacity, quantity"),
     ]);
     setCategories(cats ?? []);
     setSubcategories(subs ?? []);
 
     // Total Capacity per subcategory — recomputed from the live product
-    // set every time products are added/edited/deleted, since capacities
-    // are all treated the same (just summed, no unit conversion).
+    // set every time products are added/edited/deleted. Matches the
+    // homepage summary's formula exactly (volumeContribution: volume ×
+    // stock, not just volume), via the same shared helper.
     const summary: Record<string, SubcategorySummary> = {};
     for (const p of products ?? []) {
       if (!p.subcategory_id) continue;
       const entry = summary[p.subcategory_id] ?? { count: 0, totalCapacity: 0 };
       entry.count += 1;
-      entry.totalCapacity += p.capacity ?? 0;
+      entry.totalCapacity += volumeContribution(p);
       summary[p.subcategory_id] = entry;
     }
     setSummaryBySubcategory(summary);

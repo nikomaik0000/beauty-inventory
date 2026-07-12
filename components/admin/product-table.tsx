@@ -55,7 +55,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       }),
       columnHelper.accessor("quantity", {
         header: "庫存",
-        cell: (info) => <span>×{info.getValue()}</span>,
+        cell: (info) => <span>{info.getValue()}</span>,
       }),
       columnHelper.display({
         id: "expiration",
@@ -205,7 +205,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Badge tone={statusTone[status]} className="text-[11px]">{formatExpiration(p)}</Badge>
                 <span className="text-xs text-textMuted">
-                  {formatCapacity(p.capacity) ? `${formatCapacity(p.capacity)} · ` : ""}×{p.quantity}
+                  {formatCapacity(p.capacity) ? `${formatCapacity(p.capacity)} · ` : ""}{p.quantity}
                 </span>
                 {p.opened ? <Badge tone="muted">已開封</Badge> : <Badge tone="success">未開封</Badge>}
               </div>

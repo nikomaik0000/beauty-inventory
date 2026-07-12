@@ -9,7 +9,7 @@ import { ViewToggle } from "@/components/view-toggle";
 import { ProductListTable } from "@/components/product-list-table";
 import { ProductCardGrid } from "@/components/product-card-grid";
 import { useLocalStorage } from "@/lib/use-local-storage";
-import { daysUntil, isExpiringSoon } from "@/lib/utils";
+import { daysUntil, isExpiringSoon, volumeContribution } from "@/lib/utils";
 import { defaultFilters } from "@/lib/types";
 import type {
   Brand,
@@ -91,15 +91,15 @@ export function ProductExplorer({
 
   // Reuses `sorted` — the same filtered/sorted list already rendered
   // below — so this never triggers another query and always matches
-  // what's on screen. Capacity is only summed for products that
-  // actually have one set; an empty/null capacity is skipped rather
-  // than counted as 0, and if nothing on screen has a capacity at all
-  // the total shows "—" instead of "0".
-  const totalCapacityLabel = useMemo(() => {
-    const withCapacity = sorted.filter((p) => p.capacity != null && p.capacity > 0);
-    if (withCapacity.length === 0) return "—";
-    const sum = withCapacity.reduce((total, p) => total + (p.capacity ?? 0), 0);
-    return String(sum);
+  // what's on screen. Built as an array of formatted strings, joined
+  // with " ・ ", so a future stat (即將到期) can be appended with one
+  // more array entry rather than restructuring this template.
+  const summaryParts = useMemo(() => {
+    const productCount = sorted.length;
+    const totalStock = sorted.reduce((total, p) => total + (Number(p.quantity) || 0), 0);
+    const totalVolume = sorted.reduce((total, p) => total + volumeContribution(p), 0);
+
+    return [`共 ${productCount} 件商品`, `總庫存 ${totalStock}`, `總容量 ${totalVolume}`];
   }, [sorted]);
 
   return (
@@ -125,7 +125,7 @@ export function ProductExplorer({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-textMuted">共 {sorted.length} 件商品 ・ 總容量 {totalCapacityLabel}</p>
+      <p className="mt-4 text-xs text-textMuted">{summaryParts.join(" ・ ")}</p>
 
       {sorted.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
@@ -137,7 +137,7 @@ export function ProductExplorer({
           <ProductListTable products={sorted} />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
               <ProductCardGrid product={p} categoryIndex={categoryIndexOf(p.category_id)} />

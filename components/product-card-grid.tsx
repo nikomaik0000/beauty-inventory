@@ -7,14 +7,16 @@ import { categoryAccent, productImageSize } from "@/lib/theme";
 import { formatCapacity, formatExpirationCompact, initials } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
 
-/** Plain label/value row — no badge, background, or border. Label
- * column is a fixed width (both labels are 2 CJK characters) so Brand
- * and Volume values start at the same x position. */
+/** Plain label/value row — no badge, background, or border. Same
+ * font-size/weight for label and value (14px / 500); only color
+ * distinguishes them (`textLabel` #777777 vs `textPrimary` #555555).
+ * Label column is a fixed width (both labels are 2 CJK characters) so
+ * Brand and Volume values start at the same x position. */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2 text-xs leading-relaxed">
-      <span className="w-8 shrink-0 font-medium text-textMuted">{label}</span>
-      <span className="truncate text-base font-semibold text-textPrimary">{value}</span>
+    <div className="flex items-center gap-2 text-sm leading-relaxed">
+      <span className="w-8 shrink-0 font-medium text-textLabel">{label}</span>
+      <span className="truncate font-medium text-textPrimary">{value}</span>
     </div>
   );
 }
@@ -31,7 +33,7 @@ export function ProductCardGrid({
   return (
     <HoverCard className="flex h-full flex-col p-7">
       <h3
-        className="truncate text-[15px] font-medium leading-snug tracking-[0.05em] text-textPrimary"
+        className="truncate text-[15px] font-medium leading-snug tracking-[0.05em] text-textHeading"
         style={{ fontFamily: "var(--font-serif-cjk)" }}
       >
         {product.name}
@@ -65,11 +67,11 @@ export function ProductCardGrid({
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
           {product.brand && <InfoRow label="品牌" value={product.brand.name} />}
 
-          <div className="flex items-center gap-2 text-xs leading-relaxed">
+          <div className="flex items-center gap-2 text-sm leading-relaxed">
             {capacityText ? (
               <>
-                <span className="w-8 shrink-0 font-medium text-textMuted">容量</span>
-                <span className="truncate text-base font-semibold text-textPrimary">{capacityText}</span>
+                <span className="w-8 shrink-0 font-medium text-textLabel">容量</span>
+                <span className="truncate font-medium text-textPrimary">{capacityText}</span>
               </>
             ) : (
               <span className="w-8 shrink-0" />

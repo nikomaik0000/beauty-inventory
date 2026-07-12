@@ -31,7 +31,9 @@
   --color-surface-muted: #F4EFE6;
   --color-border: #E6DFD1;
   --color-divider: #EDE8DD;
-  --color-text-primary: #3A342C;
+  --color-text-primary: #555555;
+  --color-text-heading: #3A342C;
+  --color-text-label: #777777;
   --color-text-secondary: #6E6656;
   --color-text-muted: #9C927E;
   --color-accent: #A68965;
@@ -87,6 +89,8 @@
   --color-border: #43392A;
   --color-divider: #393226;
   --color-text-primary: #F1EADD;
+  --color-text-heading: #F1EADD;
+  --color-text-label: #B3A88F;
   --color-text-secondary: #CABBA1;
   --color-text-muted: #8C806C;
   --color-accent: #CBAA80;

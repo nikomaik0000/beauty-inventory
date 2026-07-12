@@ -1,5 +1,44 @@
 # Changelog
 
+## Phase 4B — global text color, corrected stats, list/card consistency
+- **Global text color**: `--color-text-primary` (light mode) changed
+  from `#3A342C` to `#555555`, applied everywhere via the existing
+  design-system token (nav, search, toolbar, filters, cards, tables,
+  admin, dialogs — no per-component edits needed, that's the point of
+  Phase 3E's architecture). Added two new tokens rather than hardcoding
+  one-off colors: `--color-text-heading` (`#3A342C`, the *old* primary
+  color, now reserved for the product card title so it stays the
+  darkest/most prominent element) and `--color-text-label` (`#777777`,
+  for the Brand/Volume labels specifically — distinct from the existing
+  `textMuted` token, which stays as it was for everything else that
+  used it). Dark mode's primary text was left alone — not requested,
+  and already appropriately light for a dark background.
+- **Card typography**: Brand/Volume labels and values are now both
+  14px/500 — same size and weight, differing only by color
+  (`textLabel` #777777 vs `textPrimary` #555555, which reads
+  correctly darker). Title unchanged (serif, size, tracking, weight).
+- **Corrected 總容量**: it was summing volume alone; fixed to volume ×
+  stock via a new shared `volumeContribution()` helper in `lib/utils.ts`
+  (treats missing/invalid volume or stock as 0) — used by both the
+  homepage summary and the admin Categories page's per-subcategory
+  summary, so the two can't drift apart again.
+- **New 總庫存 stat** (sum of stock) added to the homepage summary.
+  Rebuilt as `summaryParts.join(" ・ ")` — an array of pre-formatted
+  strings — specifically so a future 即將到期 stat is a one-line
+  addition, not a template rewrite. Dropped the previous "—" fallback
+  for an all-empty total; the new spec says treat empty as 0, so the
+  total is now always a plain number.
+- **List view rebuilt** to the new column set: 商品 · 品牌 · 容量 · 效期
+  · 備註 · 庫存 · 開封. Notes moved out from under the product name into
+  its own single-line, truncated column (row height no longer varies
+  with note length). Brand uses the same 14px/500 typography as the
+  card view. Stock lost its "×" prefix. The opened-state column now has
+  a "開封" header — the icon itself is unchanged, this is a column
+  label, not a per-icon tooltip.
+- **Removed every remaining unit-like prefix**: the admin product
+  table's quantity column (desktop + mobile) also dropped its "×"
+  prefix, matching the list/card views.
+
 ## Phase 4A (fine-tune) — typography & spacing pass
 - Card grid gap: 14px → 28px (`gap-3.5` → `gap-7`), both directions, to
   match Birthday Rewards' breathing room.
