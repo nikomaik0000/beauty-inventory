@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
-import { Providers } from "./providers";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -17,18 +16,16 @@ export const metadata: Metadata = {
   },
 };
 
+// Light mode only — Dark Mode was removed in Phase 4B.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF8F4" },
-    { media: "(prefers-color-scheme: dark)", color: "#211D17" },
-  ],
+  themeColor: "#FAF8F4",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-Hant" suppressHydrationWarning>
+    <html lang="zh-Hant">
       <head>
         {/* Product-title serif stack is "Songti SC" / "Apple LiSong" (macOS/iOS
             system fonts) first, so this is only a fallback for other platforms —
@@ -40,9 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- this rule targets the old Pages Router's _document.js; a <link> in the App Router root layout's <head> is the correct, supported place for this. */}
         <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${fraunces.variable} font-sans`}>
-        <Providers>{children}</Providers>
-      </body>
+      <body className={`${inter.variable} ${fraunces.variable} font-sans`}>{children}</body>
     </html>
   );
 }

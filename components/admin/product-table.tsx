@@ -77,7 +77,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           <div className="flex items-center justify-end gap-1">
             <Link
               href={`/admin/products/${row.original.id}/edit`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-surfaceMuted"
+              className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
               aria-label="編輯商品"
             >
               <Pencil size={14} />
@@ -90,7 +90,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 setDeletingId(row.original.id);
                 startTransition(() => deleteProduct(row.original.id));
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
+              className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
               aria-label="刪除商品"
             >
               <Trash2 size={14} />
@@ -125,14 +125,26 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
 
   return (
     <Card>
-      {/* Tablet / desktop: full data table inside a bounded scroll region. */}
-      <div className="scroll-x-region hidden lg:block">
-        <table className="w-full min-w-[780px] text-left text-sm">
+      {/* Tablet / desktop: a fluid table-fixed layout (no forced
+          min-width), so it fits the available width naturally instead
+          of needing a horizontal scrollbar. */}
+      <div className="hidden lg:block">
+        <table className="w-full table-fixed text-left text-sm">
+          <colgroup>
+            <col style={{ width: "20%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "14%" }} />
+          </colgroup>
           <thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b border-divider">
+              <tr key={hg.id} className="h-11 border-b border-divider">
                 {hg.headers.map((header) => (
-                  <th key={header.id} className="px-4 py-2.5 text-xs font-medium text-textMuted">
+                  <th key={header.id} className="truncate px-4 align-middle text-xs font-medium text-textMuted">
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
@@ -151,9 +163,9 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b border-divider last:border-0 hover:bg-surfaceMuted/50">
+              <tr key={row.id} className="h-12 border-b border-divider last:border-0 hover:bg-surfaceMuted/50">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-2.5">
+                  <td key={cell.id} className="truncate px-4 align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -181,7 +193,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 <div className="flex shrink-0 items-center gap-1">
                   <Link
                     href={`/admin/products/${p.id}/edit`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-surfaceMuted"
+                    className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                     aria-label="編輯商品"
                   >
                     <Pencil size={14} />
@@ -194,7 +206,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                       setDeletingId(p.id);
                       startTransition(() => deleteProduct(p.id));
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
+                    className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
                     aria-label="刪除商品"
                   >
                     <Trash2 size={14} />

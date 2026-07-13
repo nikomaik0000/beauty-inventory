@@ -14,24 +14,24 @@
  * which take numeric seconds rather than a CSS duration string — so
  * both layers stay in one place to update together.
  *
- * Everything colour-related (including category accents and the
- * expiration-urgency thresholds) lives in `lib/theme.ts`; it's
- * re-exported below so `@/lib/design-system` is a single import that
- * covers the whole system.
+ * Category accents, expiration thresholds, and the product image size
+ * live in `lib/theme.ts`; re-exported below so `@/lib/design-system` is
+ * a single import that covers the whole system.
  */
 
-export { theme, categoryAccent, categoryAccentCycle, expirationThresholds, productImageSize } from "./theme";
-export type { ThemeMode, ThemeTokens } from "./theme";
+export { categoryAccent, categoryAccentCycle, expirationThresholds, productImageSize } from "./theme";
 
-/** Border radius, one value per control family. Matches
- * `--radius-*` in globals.css and the `rounded-*` keys in
- * tailwind.config.ts — change the value in globals.css, not here. */
+/** Border radius, one value per control family. Matches `--radius-*`
+ * in globals.css and the `rounded-*` keys in tailwind.config.ts —
+ * change the value in globals.css, not here. Consolidated to a
+ * consistent ~10px across the card/input/dropdown/dialog "box" family
+ * in Phase 4B; buttons/badges stay their own fully-rounded pill family. */
 export const radius = {
   button: "9999px",
-  input: "0.75rem",
-  card: "14px",
-  dropdown: "0.75rem",
-  dialog: "14px",
+  input: "10px",
+  card: "10px",
+  dropdown: "10px",
+  dialog: "10px",
   badge: "9999px",
 } as const;
 
@@ -40,6 +40,7 @@ export const radius = {
 export const typography = {
   fontSans: "var(--font-sans)",
   fontSerif: "var(--font-serif)",
+  fontSerifCjk: "var(--font-serif-cjk)",
   heading: { size: "1.25rem", weight: 600, lineHeight: 1.3, letterSpacing: "-0.01em" },
   body: { size: "0.875rem", weight: 400, lineHeight: 1.6 },
   small: { size: "0.75rem", weight: 500, lineHeight: 1.5 },
@@ -52,7 +53,7 @@ export const typography = {
  * should reach for, spelled out as a reference rather than a new set
  * of tokens to keep in sync with Tailwind's. */
 export const spacing = {
-  cardPadding: "p-4",
+  cardPadding: "p-7",
   sectionGap: "gap-6",
   formGap: "space-y-6",
   toolbarGap: "gap-2",
@@ -62,7 +63,6 @@ export const spacing = {
  * keys in tailwind.config.ts. */
 export const shadow = {
   card: "var(--shadow-card)",
-  cardHover: "var(--shadow-card-hover)",
   dropdown: "var(--shadow-dropdown)",
   dialog: "var(--shadow-dialog)",
 } as const;

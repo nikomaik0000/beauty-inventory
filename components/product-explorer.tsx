@@ -125,7 +125,11 @@ export function ProductExplorer({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-textMuted">{summaryParts.join(" ・ ")}</p>
+      <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-textMuted">
+        {summaryParts.map((part) => (
+          <span key={part}>{part}</span>
+        ))}
+      </div>
 
       {sorted.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
@@ -133,11 +137,11 @@ export function ProductExplorer({
           <p className="text-xs text-textMuted">試著清除篩選條件或換個關鍵字搜尋看看。</p>
         </div>
       ) : viewMode === "list" ? (
-        <div className="mt-4">
+        <div className="mt-8">
           <ProductListTable products={sorted} />
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((p, i) => (
             <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
               <ProductCardGrid product={p} categoryIndex={categoryIndexOf(p.category_id)} />

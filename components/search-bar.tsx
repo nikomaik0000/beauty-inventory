@@ -14,7 +14,7 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="搜尋商品…"
-        className="h-10 w-full rounded-xl border border-border bg-searchBackground pl-10 pr-9 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors"
+        className="h-10 w-full rounded-input border border-border bg-searchBackground pl-10 pr-9 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors"
       />
       {value && (
         <button

@@ -1,6 +1,41 @@
 # Changelog
 
-## Phase 4B — global text color, corrected stats, list/card consistency
+## Phase 4B — polish, storage correctness, dark mode removal
+- **Dark Mode removed**: `next-themes`, `ThemeProvider`, `ThemeToggle`,
+  and every `.dark` CSS variable deleted. Light mode only.
+- **Focus/hover effects removed**: one global `outline: none` rule for
+  all focus states; product cards lost their hover shadow (`HoverCard`
+  deleted as dead code).
+- **Card layout**: info block now top-aligned (was vertically centered)
+  so multi-line Notes can't push Brand/Volume out of position; title
+  bumped one size up; more internal spacing throughout.
+- **Image replace flow fixed**: old Storage image is now deleted
+  server-side, only after a successful DB write (`updateProduct`),
+  instead of optimistically client-side before the form was even saved
+  — the previous approach could orphan the DB reference on an abandoned
+  edit. Shared deletion logic extracted to
+  `lib/product-images-server.ts`.
+- **Short filenames**: new uploads use `products/<10-char-random>.webp`
+  instead of a full UUID at the bucket root.
+- **Storage Maintenance** (`/admin/settings`): scan for and delete
+  Storage files no longer referenced by any product
+  (`app/actions/storage.ts`).
+- **List view**: percentage-based column widths (`table-fixed` +
+  `<colgroup>`), fixed row height, vertical-centered cells. Admin
+  product table got the same treatment specifically to remove a
+  horizontal scrollbar at medium-desktop widths.
+- **Statistics row**: dropped the "・" bullet separators for plain
+  spacing between three independent-feeling stats.
+- **Mobile admin nav**: horizontal tab row (Products/Categories/Brands/
+  Settings) replacing the stacked vertical list on mobile only; desktop
+  unchanged aside from the new Settings entry. Sign-out moved to
+  Settings.
+- **Border radius consolidated to ~10px** for the card/input/dropdown/
+  dialog family (was a mix of 10/12/14px); every one-off `rounded-lg` /
+  `rounded-xl` / `rounded-md` switched to the shared `rounded-input`
+  token.
+
+## Phase 4B (typography/color/stats/units, previous pass)
 - **Global text color**: `--color-text-primary` (light mode) changed
   from `#3A342C` to `#555555`, applied everywhere via the existing
   design-system token (nav, search, toolbar, filters, cards, tables,

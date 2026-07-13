@@ -47,7 +47,7 @@ export function SimpleEntityList({
                       setEditingId(null);
                     });
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-success hover:bg-surfaceMuted"
+                  className="flex h-8 w-8 items-center justify-center rounded-input text-success hover:bg-surfaceMuted"
                 >
                   <Check size={14} />
                 </button>
@@ -55,7 +55,7 @@ export function SimpleEntityList({
                   type="button"
                   aria-label="取消"
                   onClick={() => setEditingId(null)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-textMuted hover:bg-surfaceMuted"
+                  className="flex h-8 w-8 items-center justify-center rounded-input text-textMuted hover:bg-surfaceMuted"
                 >
                   <X size={14} />
                 </button>
@@ -72,7 +72,7 @@ export function SimpleEntityList({
                     setEditingId(item.id);
                     setDraft(item.name);
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-surfaceMuted"
+                  className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                 >
                   <Pencil size={14} />
                 </button>
@@ -84,7 +84,7 @@ export function SimpleEntityList({
                     if (!confirm(`確定要刪除「${item.name}」嗎？使用中的商品會保留其他資料。`)) return;
                     startTransition(() => onDelete(item.id));
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-textSecondary hover:bg-dangerSoft hover:text-danger"
+                  className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
                 >
                   <Trash2 size={14} />
                 </button>

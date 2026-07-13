@@ -32,7 +32,7 @@ export function LoginForm() {
         <p className="mt-1 text-xs text-textMuted">登入以管理商品、分類與品牌。</p>
       </div>
 
-      {error && <p className="rounded-lg bg-dangerSoft px-3 py-2 text-xs text-danger">{error}</p>}
+      {error && <p className="rounded-input bg-dangerSoft px-3 py-2 text-xs text-danger">{error}</p>}
 
       <div>
         <Label htmlFor="email">電子郵件</Label>

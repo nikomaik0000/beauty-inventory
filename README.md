@@ -2,13 +2,15 @@
 
 Personal Skincare Inventory — a standalone app in the same warm, minimal
 design family as Birthday Rewards, for tracking your skincare collection:
-expiration dates, opened status, PAO windows, brands, and tags.
+expiration dates, opened status, PAO windows, capacity, and brands.
 
 ## Stack
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS · Supabase ·
 React Hook Form + Zod · TanStack Table · Framer Motion · Lucide Icons ·
-next-themes (dark mode) · next-pwa (installable app)
+next-pwa (installable app)
+
+Light mode only — Dark Mode was deliberately removed (see "Phase 4B notes").
 
 ## 1. Create the Supabase project
 
@@ -127,8 +129,9 @@ home-screen icon when installed.
 
 - **Design system** — `app/globals.css` is the single source of truth:
   every color, border radius, shadow, and transition duration used
-  anywhere in the app is a CSS variable defined there (with a `.dark`
-  pair for each). `tailwind.config.ts` wires those variables into
+  anywhere in the app is a CSS variable defined there (light mode
+  only — see "Phase 4B notes" for why there's no dark-mode pair
+  anymore). `tailwind.config.ts` wires those variables into
   Tailwind class names (`bg-accent`, `rounded-card`, `shadow-dropdown`,
   `duration-base`, …) — it holds no literal color/radius/shadow values
   itself. `lib/theme.ts` keeps the color tokens as a typed JS object for
@@ -163,15 +166,18 @@ home-screen icon when installed.
   the list/card view toggle on the homepage; everything below it is
   presentational.
 - `app/admin/` — the admin panel: products table (`/admin`), add/edit
-  product form, and management pages for categories & subcategories
-  (nested together, since a subcategory always belongs to a category)
-  and brands.
+  product form, management pages for categories & subcategories (nested
+  together, since a subcategory always belongs to a category) and
+  brands, and `/admin/settings` (sign-out + Storage Maintenance).
 - `lib/image-optimize.ts` / `lib/product-images.ts` /
   `components/admin/image-uploader.tsx` — the product image pipeline:
   validate → resize to ~800px + WebP in the browser → upload to Supabase
-  Storage → store the public URL. Every failure mode (missing bucket,
-  no permission, oversized file, unsupported format, network error)
-  surfaces its own friendly message rather than a raw error string.
+  Storage (short random filename under `products/`) → store the public
+  URL. Every failure mode (missing bucket, no permission, oversized
+  file, unsupported format, network error) surfaces its own friendly
+  message rather than a raw error string. `lib/product-images-server.ts`
+  is the server-side counterpart used for deleting old/orphaned images
+  (see `app/actions/products.ts` and `app/actions/storage.ts`).
 
 ## Data model notes
 
@@ -336,4 +342,77 @@ rebuilt rather than patched:
   CSS variables correctly in both themes.
 - Also fixed a stale copy bug in the login form ("…品牌與標籤" still
   mentioned Tags, which Phase 2B removed).
+
+## Phase 4B notes — polish, storage correctness, dark mode removal
+
+**Dark Mode removed entirely.** `next-themes`, the `ThemeProvider`
+wrapper, `ThemeToggle`, and every dark-mode CSS variable pair are gone;
+`globals.css` now defines light-mode values only. If you ever want it
+back, the cleanest path is re-introducing the `.dark { --color-*: … }`
+variable block this replaced (still visible in git history) rather than
+re-deriving it from scratch.
+
+**Focus and hover effects removed.** `:focus-visible { outline: none; }`
+is the one rule governing every interactive element app-wide — buttons,
+inputs, search, dropdowns, filter controls all look identical
+before/after interaction. Product cards lost their hover shadow too
+(`HoverCard` was deleted from `components/ui/card.tsx` as dead code
+once nothing used it anymore).
+
+**Image replace/delete correctness.** Previously the uploader deleted
+the *old* Storage object client-side, optimistically, the moment a new
+upload succeeded — before the product form was even saved. That could
+orphan the database's reference if the edit was abandoned. Now:
+`components/admin/image-uploader.tsx` only uploads and reports the new
+URL; `app/actions/products.ts`'s `updateProduct` fetches the row's
+*current* `image_url` before writing, and only deletes that old Storage
+object *after* the database write succeeds (`lib/product-images-server.ts`
+holds the shared deletion helper, used by `updateProduct`, `deleteProduct`,
+and the Storage Maintenance tool). This is deliberately not the literal
+"delete old → upload new → save" order — deleting first risks leaving a
+product with no image at all if the next step fails. Any orphan this
+approach *can* still leave behind (e.g. uploading a replacement image
+and then abandoning the edit without saving) is exactly what Storage
+Maintenance is for.
+
+**Storage Maintenance** (`/admin/settings`): scans every file in the
+`product-images` bucket, compares against every `image_url` actually
+referenced by a product, and lets you delete whatever's orphaned — one
+at a time or all at once. Server actions in `app/actions/storage.ts`.
+
+**Short filenames.** New uploads go to `products/<10-char-random>.webp`
+(e.g. `products/a8f3d91cQm.webp`) instead of a full UUID at the bucket
+root. Old-style root-level files from before this change still work
+fine and are still picked up by Storage Maintenance's scan (it checks
+both locations).
+
+**Corrected total-volume-adjacent spacing/typography**: card info block
+now aligns to the top of the image (was vertically centered) so
+multi-line Notes doesn't push Brand/Volume out of alignment; title
+bumped one size up for clearer hierarchy; card/grid/toolbar spacing
+increased throughout for more breathing room; the homepage stats row
+(共 X 件商品 / 總庫存 / 總容量) dropped the "・" bullet separators for
+plain generous spacing between three independent-feeling stats.
+
+**List view**: percentage-based column widths via `table-fixed` +
+`<colgroup>` (商品 25% · 品牌 20% · 容量 5% · 效期 15% · 備註 25% ·
+庫存 5% · 開封 5%), fixed row height, every cell vertically centered.
+The admin product table got the same `table-fixed` treatment (with its
+own 8-column width split) specifically to eliminate a horizontal
+scrollbar that could appear on medium-desktop widths — no more bounded
+scroll region, it now fits.
+
+**Mobile admin navigation**: the vertical sidebar (Products/Categories/
+Brands/sign-out, stacked) is now a horizontal tab row on mobile only —
+desktop is unchanged, plus a new 設定 (Settings) entry on both. Sign-out
+moved to the Settings page, since the mobile tab row no longer has room
+for it (the header's logo already links home, so "返回首頁" wasn't
+needed in the tab row either).
+
+**Border radius consolidated to ~10px** across every "box" family
+(card/input/dropdown/dialog — was a mix of 10/12/14px); buttons and
+badges remain their own fully-rounded pill family. Every one-off
+`rounded-lg` / `rounded-xl` / `rounded-md` found during this pass was
+switched to the shared `rounded-input` token.
+
 

@@ -1,16 +1,20 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images-server";
 
 /**
- * Supabase Storage upload/delete for product images.
+ * Supabase Storage upload for product images (client-side — this runs
+ * from the browser, inside the admin product form).
  *
- * Rebuilt in Phase X to turn raw Storage errors (like the "Bucket not
- * found" error this replaces) into a friendly message that tells the
- * person what to actually do, instead of a bare error string.
+ * Deletion of the *old* image on replace/remove is handled server-side
+ * now (see app/actions/products.ts), triggered only after the product
+ * row is actually saved — not optimistically here — so an abandoned
+ * edit (upload a new image, then navigate away without saving) can
+ * never leave the database pointing at a file that's already gone.
+ * Any orphan that scenario does leave behind in Storage is exactly
+ * what the Storage Maintenance tool (/admin/settings) cleans up.
  */
-
-const BUCKET = "product-images";
 
 export class ImageUploadError extends Error {}
 
@@ -38,11 +42,25 @@ function toFriendlyUploadError(rawMessage: string): ImageUploadError {
   return new ImageUploadError(`上傳失敗：${rawMessage}`);
 }
 
+const FILENAME_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+/** Short (10-char), random, unique-enough filename — no timestamps, no
+ * long UUIDs, no original/Chinese filenames, no spaces. 62^10 possible
+ * values makes a collision astronomically unlikely for a personal-scale
+ * inventory, so this deliberately doesn't add retry-on-conflict
+ * complexity for a risk this small. */
+function generateShortFilename(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  let id = "";
+  for (const byte of bytes) id += FILENAME_CHARS[byte % FILENAME_CHARS.length];
+  return `${id}.webp`;
+}
+
 export async function uploadProductImage(file: File): Promise<string> {
   const supabase = createClient();
-  const path = `${crypto.randomUUID()}.webp`;
+  const path = `products/${generateShortFilename()}`;
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).upload(path, file, {
     contentType: "image/webp",
     cacheControl: "31536000",
     upsert: false,
@@ -50,29 +68,8 @@ export async function uploadProductImage(file: File): Promise<string> {
 
   if (error) throw toFriendlyUploadError(error.message);
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  const { data } = supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(path);
   if (!data?.publicUrl) throw new ImageUploadError("上傳成功，但無法取得圖片網址，請重新整理後再試一次。");
 
   return data.publicUrl;
-}
-
-function pathFromPublicUrl(url: string): string | null {
-  const marker = `/${BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return url.slice(idx + marker.length);
-}
-
-/** Best-effort delete — storage cleanup should never block the product
- * save/delete flow it's attached to, so failures are swallowed here. */
-export async function deleteProductImageByUrl(url: string): Promise<void> {
-  try {
-    const path = pathFromPublicUrl(url);
-    if (!path) return;
-    const supabase = createClient();
-    await supabase.storage.from(BUCKET).remove([path]);
-  } catch {
-    // Non-fatal: an orphaned storage object is a cosmetic issue, not a
-    // reason to fail the product save/delete the user is waiting on.
-  }
 }

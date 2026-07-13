@@ -116,7 +116,7 @@ export default function CategoriesAdminPage() {
                         setEditingCategoryId(category.id);
                         setCategoryDraft(category.name);
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-textSecondary hover:bg-surfaceMuted"
+                      className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                     >
                       <Pencil size={13} />
                     </button>
@@ -128,7 +128,7 @@ export default function CategoriesAdminPage() {
                         await deleteCategory(category.id);
                         await refresh();
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-textSecondary hover:bg-dangerSoft hover:text-danger"
+                      className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -141,7 +141,7 @@ export default function CategoriesAdminPage() {
               {subcategories
                 .filter((s) => s.category_id === category.id)
                 .map((sub) => (
-                  <li key={sub.id} className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm hover:bg-surfaceMuted">
+                  <li key={sub.id} className="flex items-center justify-between rounded-input px-2.5 py-1.5 text-sm hover:bg-surfaceMuted">
                     {editingSubId === sub.id ? (
                       <div className="flex flex-1 items-center gap-2">
                         <Input value={subDraft} onChange={(e) => setSubDraft(e.target.value)} className="h-7" autoFocus />
@@ -230,7 +230,7 @@ export default function CategoriesAdminPage() {
                   setNewSubName((prev) => ({ ...prev, [category.id]: "" }));
                   await refresh();
                 }}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-textSecondary hover:bg-surfaceMuted"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-input border border-border text-textSecondary hover:bg-surfaceMuted"
               >
                 <Plus size={14} />
               </button>

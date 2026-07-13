@@ -91,7 +91,7 @@ export function ProductForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {serverError && (
-        <div className="rounded-xl border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
+        <div className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
           {serverError}
         </div>
       )}
@@ -194,7 +194,7 @@ export function ProductForm({
         <Input id="pao_months" type="number" min={0} {...register("pao_months")} placeholder="例如：12" />
       </div>
 
-      <div className="flex flex-col gap-2.5 rounded-xl border border-border bg-surfaceMuted/50 p-4">
+      <div className="flex flex-col gap-2.5 rounded-input border border-border bg-surfaceMuted/50 p-4">
         <label className="flex items-center gap-2 text-sm text-textSecondary">
           <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("opened")} />
           已開封

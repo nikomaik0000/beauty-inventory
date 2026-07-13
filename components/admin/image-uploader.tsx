@@ -4,17 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle, ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { optimizeImageForUpload, validateImageFile, ImageProcessingError } from "@/lib/image-optimize";
-import { deleteProductImageByUrl, uploadProductImage, ImageUploadError } from "@/lib/product-images";
+import { uploadProductImage, ImageUploadError } from "@/lib/product-images";
 
 /**
  * Product image field: click or drag-and-drop to upload, large preview,
- * replace, delete. Rebuilt from scratch in Phase X.
+ * replace, delete.
  *
  * Flow: pick a file → instant local preview → validate → resize to
  * ~800px + WebP in the browser → upload to Supabase Storage → swap the
- * local preview for the real public URL → best-effort delete the old
- * image. Every step that can fail surfaces a specific, friendly message
- * instead of crashing the form.
+ * local preview for the real public URL. Every step that can fail
+ * surfaces a specific, friendly message instead of crashing the form.
+ *
+ * Deleting the *previous* image (on replace, or on removing the image
+ * entirely) is intentionally NOT done here — see app/actions/products.ts
+ * for why.
  */
 export function ImageUploader({
   value,
@@ -64,7 +67,6 @@ export function ImageUploader({
       return;
     }
 
-    const previousUrl = value;
     setOptimisticPreview(file);
     setBusy(true);
 
@@ -77,7 +79,6 @@ export function ImageUploader({
 
       onChange(url);
       setOptimisticPreview(null);
-      if (previousUrl) void deleteProductImageByUrl(previousUrl);
     } catch (err) {
       setOptimisticPreview(null);
       if (err instanceof ImageProcessingError || err instanceof ImageUploadError) {
@@ -92,10 +93,8 @@ export function ImageUploader({
   }
 
   function handleDelete() {
-    const previousUrl = value;
     setError(null);
     onChange("");
-    if (previousUrl) void deleteProductImageByUrl(previousUrl);
   }
 
   const displaySrc = localPreview ?? (value || null);

@@ -7,9 +7,12 @@
    This is the single source of truth for color, radius, shadow, and
    transition values. tailwind.config.ts reads every one of these via
    var(--…) rather than hardcoding literals, so changing a value here
-   (or its dark-mode pair below) updates the whole app — no per-component
-   edits required. lib/design-system.ts mirrors this file for the few
-   places a JS value is needed (e.g. Framer Motion transitions).
+   updates the whole app — no per-component edits required.
+   lib/design-system.ts mirrors this file for the few places a JS value
+   is needed (e.g. Framer Motion transitions).
+
+   Light mode only — Dark Mode was removed in Phase 4B (personal-use,
+   single-user app; the theme switcher was unused complexity).
    ========================================================================== */
 
 :root {
@@ -49,18 +52,18 @@
   --color-warning: #B98C4C;
   --color-warning-soft: #F3E8D3;
 
-  /* Border radius — one value per control family, reused by every
-     component in that family so nothing drifts out of sync. */
+  /* Border radius — consistent ~10px across every "box" control family
+     (card/input/dropdown/dialog); buttons and badges are their own
+     "fully rounded pill" family, consistent within itself. */
   --radius-button: 9999px;
-  --radius-input: 0.75rem;
-  --radius-card: 12px;
-  --radius-dropdown: 0.75rem;
-  --radius-dialog: 14px;
+  --radius-input: 10px;
+  --radius-card: 10px;
+  --radius-dropdown: 10px;
+  --radius-dialog: 10px;
   --radius-badge: 9999px;
 
   /* Shadow */
   --shadow-card: 0 1px 2px rgba(60, 45, 30, 0.06), 0 1px 1px rgba(60, 45, 30, 0.04);
-  --shadow-card-hover: 0 4px 14px rgba(60, 45, 30, 0.10);
   --shadow-dropdown: 0 8px 24px rgba(60, 45, 30, 0.12);
   --shadow-dialog: 0 12px 32px rgba(60, 45, 30, 0.16);
 
@@ -69,48 +72,6 @@
   --duration-base: 150ms;
   --duration-slow: 200ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Focus ring — deliberately subtle everywhere (buttons, inputs,
-     search, dropdowns, toolbar, admin forms all resolve to this one
-     rule). Semi-transparent on purpose, so the interface looks almost
-     identical before/after focus. No border-radius override here: the
-     outline follows each element's own radius instead of forcing a
-     mismatched one, which was the cause of controls appearing to
-     change shape on focus/click. */
-  --focus-ring-width: 1.5px;
-  --focus-ring-offset: 1px;
-  --color-focus-ring: rgba(166, 137, 101, 0.5);
-}
-
-.dark {
-  --color-background: #211D17;
-  --color-surface: #2A251E;
-  --color-surface-muted: #332D23;
-  --color-border: #43392A;
-  --color-divider: #393226;
-  --color-text-primary: #F1EADD;
-  --color-text-heading: #F1EADD;
-  --color-text-label: #B3A88F;
-  --color-text-secondary: #CABBA1;
-  --color-text-muted: #8C806C;
-  --color-accent: #CBAA80;
-  --color-accent-soft: #3C3222;
-  --color-accent-strong: #E9CBA3;
-  --color-badge-bg: #38311F;
-  --color-badge-border: #4C4029;
-  --color-badge-text: #E1C79E;
-  --color-search-background: #332D23;
-  --color-danger: #DB8672;
-  --color-danger-soft: #3D251E;
-  --color-success: #8DAE87;
-  --color-warning: #DBB16C;
-  --color-warning-soft: #3C3016;
-
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.22), 0 1px 1px rgba(0, 0, 0, 0.16);
-  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.30);
-  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.34);
-  --shadow-dialog: 0 12px 32px rgba(0, 0, 0, 0.42);
-  --color-focus-ring: rgba(203, 170, 128, 0.5);
 }
 
 * {
@@ -121,9 +82,6 @@ html {
   color-scheme: light;
   /* Never allow horizontal scroll at the document level */
   overflow-x: hidden;
-}
-html.dark {
-  color-scheme: dark;
 }
 
 body {
@@ -149,14 +107,10 @@ p {
   color: var(--color-text-primary);
 }
 
-/* Subtle keyboard focus. Every interactive element in the app — button,
-   input, search, dropdown, toolbar control, admin form field — resolves
-   to this single rule, with no per-component radius override, so the
-   ring always follows the element's real shape instead of visually
-   changing it. */
+/* No visual focus effect anywhere — buttons, inputs, search, dropdowns,
+   filter controls all look identical before/after focus, by request. */
 :focus-visible {
-  outline: var(--focus-ring-width) solid var(--color-focus-ring);
-  outline-offset: var(--focus-ring-offset);
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -180,11 +134,4 @@ p {
   line-height: 1.65;
   padding-left: 0.9em;
   text-indent: -0.9em;
-}
-
-/* Any element explicitly marked as a horizontal-scroll region (tables,
- * wide toolbars on narrow screens) is the ONLY place scrollX is allowed. */
-.scroll-x-region {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }

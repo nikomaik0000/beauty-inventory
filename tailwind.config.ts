@@ -9,7 +9,6 @@ import type { Config } from "tailwindcss";
  * wires those variables into Tailwind utility class names.
  */
 const config: Config = {
-  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -40,7 +39,6 @@ const config: Config = {
         success: "var(--color-success)",
         warning: "var(--color-warning)",
         warningSoft: "var(--color-warning-soft)",
-        focusRing: "var(--color-focus-ring)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
@@ -62,7 +60,6 @@ const config: Config = {
       },
       boxShadow: {
         card: "var(--shadow-card)",
-        cardHover: "var(--shadow-card-hover)",
         dropdown: "var(--shadow-dropdown)",
         dialog: "var(--shadow-dialog)",
       },
