@@ -23,13 +23,13 @@ export function ViewToggle({ mode, onChange }: { mode: ViewMode; onChange: (m: V
           aria-pressed={mode === opt.mode}
           aria-label={`${opt.label}檢視`}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-button transition-colors duration-base",
+            "flex h-9 w-9 items-center justify-center rounded-button transition-colors duration-base",
             mode === opt.mode
               ? "bg-accentSoft text-accentStrong"
               : "text-textSecondary hover:text-textPrimary",
           )}
         >
-          <opt.icon size={15} />
+          <opt.icon size={20} strokeWidth={1.75} />
         </button>
       ))}
     </div>

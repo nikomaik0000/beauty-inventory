@@ -49,7 +49,7 @@ export function SimpleEntityList({
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-input text-success hover:bg-surfaceMuted"
                 >
-                  <Check size={14} />
+                  <Check size={14} strokeWidth={1.75} />
                 </button>
                 <button
                   type="button"
@@ -57,7 +57,7 @@ export function SimpleEntityList({
                   onClick={() => setEditingId(null)}
                   className="flex h-8 w-8 items-center justify-center rounded-input text-textMuted hover:bg-surfaceMuted"
                 >
-                  <X size={14} />
+                  <X size={14} strokeWidth={1.75} />
                 </button>
               </div>
             </>
@@ -74,7 +74,7 @@ export function SimpleEntityList({
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                 >
-                  <Pencil size={14} />
+                  <Pencil size={14} strokeWidth={1.75} />
                 </button>
                 <button
                   type="button"
@@ -86,7 +86,7 @@ export function SimpleEntityList({
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={14} strokeWidth={1.75} />
                 </button>
               </div>
             </>

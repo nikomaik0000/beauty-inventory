@@ -137,14 +137,14 @@ export function ImageUploader({
             onClick={() => inputRef.current?.click()}
             className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-textMuted transition-colors hover:text-accentStrong"
           >
-            <ImagePlus size={22} />
+            <ImagePlus size={20} strokeWidth={1.75} />
             <span className="px-3 text-center text-xs leading-snug">點擊上傳或拖曳圖片到此處</span>
           </button>
         )}
 
         {busy && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-surface/85">
-            <Loader2 size={20} className="animate-spin text-accentStrong" />
+            <Loader2 size={20} strokeWidth={1.75} className="animate-spin text-accentStrong" />
             <span className="text-[11px] text-textSecondary">{busyLabel}</span>
           </div>
         )}
@@ -169,7 +169,7 @@ export function ImageUploader({
           onClick={() => inputRef.current?.click()}
           className="flex items-center gap-1.5 text-xs font-medium text-accentStrong hover:underline disabled:opacity-50"
         >
-          <Upload size={13} />
+          <Upload size={14} strokeWidth={1.75} />
           {value ? "更換圖片" : "上傳圖片"}
         </button>
         {value && !busy && (
@@ -178,7 +178,7 @@ export function ImageUploader({
             onClick={handleDelete}
             className="flex items-center gap-1.5 text-xs font-medium text-danger hover:underline"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} strokeWidth={1.75} />
             刪除圖片
           </button>
         )}
@@ -188,7 +188,7 @@ export function ImageUploader({
 
       {error && (
         <p className="mt-1.5 flex items-start gap-1.5 text-xs text-danger">
-          <AlertCircle size={13} className="mt-0.5 shrink-0" />
+          <AlertCircle size={14} strokeWidth={1.75} className="mt-0.5 shrink-0" />
           <span>{error}</span>
         </p>
       )}

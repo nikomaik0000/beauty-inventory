@@ -18,7 +18,7 @@ export default async function AdminProductsPage() {
         </div>
         <Link href="/admin/products/new">
           <Button size="sm">
-            <Plus size={15} />
+            <Plus size={14} strokeWidth={1.75} />
             新增商品
           </Button>
         </Link>

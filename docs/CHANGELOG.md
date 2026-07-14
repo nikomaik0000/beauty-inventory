@@ -1,5 +1,46 @@
 # Changelog
 
+## Phase 4C — table redesign, icon standardization, motion/interaction rules
+- **Frontend list table**: reordered to 商品·品牌·容量·庫存·效期·備註·開封;
+  expiration is now plain text with a calendar glyph (no colored badge)
+  everywhere it appears — card, list, admin table. Headers use the
+  product title's CJK serif font with letter spacing. Removed the now-
+  fully-unused `formatExpiration` (badge/"(expired)"-suffix version)
+  from `lib/utils.ts` — every surface uses `formatExpirationCompact` now.
+- **Admin table**: dropped 分類 and the 已開封/未開封 text badge from the
+  overview (still fully editable per-product, still searchable/
+  filterable on the frontend); opened state is icon-only now, same
+  Package/PackageOpen icon as everywhere else; same CJK serif headers.
+- **Mobile list view**: rebuilt as two visual groups per row — name/
+  brand/notes (2-line clamp) on the left, capacity/stock badge/opened
+  icon/date stacked on the right — instead of everything in one
+  stacked column.
+- **Icon standardization**: every Lucide icon now shares `strokeWidth
+  1.75` and a default `#555555` color. Rather than force a single 20px
+  size everywhere (which would visually break dense contexts — a 20px
+  checkmark in a 13px dropdown row, a 20px glyph inside a 24px badge),
+  used two consistent tiers: 20px for standalone controls (nav, search,
+  filter, sort trigger, view toggle, settings, logout, edit/delete),
+  14px for icons embedded in dense/text-adjacent contexts (calendar
+  next to a date, opened-status in a table cell, checkmarks in compact
+  menus). Both tiers share the same stroke width so they still read as
+  one family. `lib/design-system.ts` documents the two tiers and the
+  reasoning; the only deliberate exception is the header's decorative
+  Sparkles logo mark, which isn't a functional icon.
+- **Dividers**: `--color-divider` updated to `#ECE7E0`; the card-title
+  divider (and any other 0.5px hairline) is now a plain 1px border —
+  `divide-y`/`border` elements elsewhere already default to 1px and
+  picked up the new color automatically.
+- **Motion/interaction rules made permanent**: `Dropdown`'s and
+  `Dialog`'s popup animations simplified to pure opacity fades (no
+  scale/translate) — "no enlargement, no shrinking" now holds
+  everywhere a popup appears, not just the Sort menu. Removed the
+  remaining `focus:border-accent` color shift from `Input`/`Textarea`/
+  `Select`/the search box, so focus is now completely visually
+  silent app-wide (not just outline-free). Removed row-hover
+  background highlighting from both tables — rows no longer change
+  color under the cursor.
+
 ## Phase 4B — polish, storage correctness, dark mode removal
 - **Dark Mode removed**: `next-themes`, `ThemeProvider`, `ThemeToggle`,
   and every `.dark` CSS variable deleted. Light mode only.

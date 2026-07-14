@@ -33,7 +33,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         )}
         {...props}
       >
-        <Icon size={label ? 15 : 16} />
+        <Icon size={20} strokeWidth={1.75} />
         {label && <span className="hidden sm:inline">{label}</span>}
         {!!badgeCount && badgeCount > 0 && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-button bg-accent px-1 text-[11px] font-semibold text-surface">

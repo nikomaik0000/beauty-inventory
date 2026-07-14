@@ -34,27 +34,13 @@ export function isExpiringSoon(product: Pick<Product, "expiration_type" | "expir
   return status === "expired" || status === "urgent" || status === "soon";
 }
 
-export function formatExpiration(product: Pick<Product, "expiration_type" | "expiration_date">): string {
-  if (product.expiration_type === "none") return "無期限";
-  if (product.expiration_type === "unknown" || !product.expiration_date) return "未知";
-
-  const date = new Date(product.expiration_date);
-  const formatted = date.toLocaleDateString("zh-Hant", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
-  const days = daysUntil(product.expiration_date);
-  if (days < 0) return `${formatted}（已過期）`;
-  return formatted;
-}
-
-/** Compact "2028.06.30" style date, with the same 無期限/未知 fallbacks
- * as formatExpiration — used on the product card, which deliberately
- * shows the date plainly (no "(expired)" suffix, no urgency framing;
- * that's still handled separately by getExpirationStatus wherever a
- * status color is actually wanted, e.g. the list view). */
+/** Compact "2028.06.30" style date, with the same 無期限/未知 fallbacks.
+ * As of Phase 4C this is the only expiration formatter actually used
+ * for display anywhere — the colored status badge this replaced is
+ * gone from every surface (card, list, admin table all show a plain
+ * calendar icon + date now). `getExpirationStatus`/`isExpiringSoon`
+ * are still used for the "expiring soon" *filter*, which is a
+ * separate concern from how the date is displayed. */
 export function formatExpirationCompact(product: Pick<Product, "expiration_type" | "expiration_date">): string {
   if (product.expiration_type === "none") return "無期限";
   if (product.expiration_type === "unknown" || !product.expiration_date) return "未知";

@@ -69,7 +69,7 @@ export function StorageMaintenance() {
 
       <div className="mt-4">
         <Button size="sm" variant="secondary" onClick={handleScan} disabled={scanning}>
-          {scanning ? <Loader2 size={14} className="animate-spin" /> : null}
+          {scanning ? <Loader2 size={14} strokeWidth={1.75} className="animate-spin" /> : null}
           {scanning ? "掃描中…" : "掃描未使用的圖片"}
         </Button>
       </div>
@@ -104,7 +104,7 @@ export function StorageMaintenance() {
                         onClick={() => handleDeleteOne(f.path)}
                         className="flex h-6 w-6 items-center justify-center rounded text-textMuted hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} strokeWidth={1.75} />
                       </button>
                     </div>
                   </li>

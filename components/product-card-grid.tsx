@@ -41,7 +41,7 @@ export function ProductCardGrid({
         {product.name}
       </h3>
 
-      <div className="mt-4 border-t-[0.5px] border-divider" />
+      <div className="mt-4 border-t border-divider" />
 
       {/* items-start (not center): the info column always aligns to the
           top of the image, even when Notes pushes it to 2-3 lines. */}
@@ -93,11 +93,11 @@ export function ProductCardGrid({
 
       <div className="mt-6 flex items-center justify-between text-xs text-textSecondary">
         <div className="flex items-center gap-1.5">
-          <Calendar size={12} />
+          <Calendar size={14} strokeWidth={1.75} />
           <span>{formatExpirationCompact(product)}</span>
         </div>
         <span className="text-textMuted" role="img" aria-label={product.opened ? "已開封" : "未開封"}>
-          {product.opened ? <PackageOpen size={14} /> : <Package size={14} />}
+          {product.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} />}
         </span>
       </div>
     </Card>

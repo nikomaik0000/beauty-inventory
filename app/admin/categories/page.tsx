@@ -99,10 +99,10 @@ export default function CategoriesAdminPage() {
                     }}
                     className="text-success"
                   >
-                    <Check size={16} />
+                    <Check size={14} strokeWidth={1.75} />
                   </button>
                   <button type="button" aria-label="取消" onClick={() => setEditingCategoryId(null)} className="text-textMuted">
-                    <X size={16} />
+                    <X size={14} strokeWidth={1.75} />
                   </button>
                 </div>
               ) : (
@@ -118,7 +118,7 @@ export default function CategoriesAdminPage() {
                       }}
                       className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                     >
-                      <Pencil size={13} />
+                      <Pencil size={14} strokeWidth={1.75} />
                     </button>
                     <button
                       type="button"
@@ -130,7 +130,7 @@ export default function CategoriesAdminPage() {
                       }}
                       className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={14} strokeWidth={1.75} />
                     </button>
                   </div>
                 </>
@@ -157,10 +157,10 @@ export default function CategoriesAdminPage() {
                           }}
                           className="text-success"
                         >
-                          <Check size={14} />
+                          <Check size={14} strokeWidth={1.75} />
                         </button>
                         <button type="button" aria-label="取消" onClick={() => setEditingSubId(null)} className="text-textMuted">
-                          <X size={14} />
+                          <X size={14} strokeWidth={1.75} />
                         </button>
                       </div>
                     ) : (
@@ -183,7 +183,7 @@ export default function CategoriesAdminPage() {
                             }}
                             className="flex h-6 w-6 items-center justify-center rounded text-textMuted hover:text-textPrimary"
                           >
-                            <Pencil size={12} />
+                            <Pencil size={14} strokeWidth={1.75} />
                           </button>
                           <button
                             type="button"
@@ -195,7 +195,7 @@ export default function CategoriesAdminPage() {
                             }}
                             className="flex h-6 w-6 items-center justify-center rounded text-textMuted hover:text-danger"
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={14} strokeWidth={1.75} />
                           </button>
                         </div>
                       </>
@@ -232,7 +232,7 @@ export default function CategoriesAdminPage() {
                 }}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-input border border-border text-textSecondary hover:bg-surfaceMuted"
               >
-                <Plus size={14} />
+                <Plus size={14} strokeWidth={1.75} />
               </button>
             </div>
           </div>

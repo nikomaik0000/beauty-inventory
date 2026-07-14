@@ -85,3 +85,21 @@ export const animation = {
     ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
   },
 } as const;
+
+/** Icon standardization (Phase 4C): every Lucide icon in the app uses
+ * one of these two sizes and the same stroke width, so visual weight
+ * stays consistent everywhere. `primary` is for standalone/toolbar-level
+ * icons (nav, search, filter, settings, edit/delete, grid/list toggle).
+ * `small` is for icons embedded in dense, text-adjacent contexts (a
+ * calendar glyph beside a date, a checkmark in a compact dropdown row,
+ * a status icon inside a table cell) where a 20px icon would visually
+ * overwhelm 12-14px text and break the row — sized down but kept at the
+ * same stroke width so the two tiers still read as one family. Default
+ * color is `text-textPrimary` (#555555) via className unless the icon
+ * is intentionally accent/semantic-colored (e.g. danger). */
+export const iconSize = {
+  primary: 20,
+  small: 14,
+} as const;
+
+export const iconStrokeWidth = 1.75;

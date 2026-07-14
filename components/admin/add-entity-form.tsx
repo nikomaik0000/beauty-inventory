@@ -40,7 +40,7 @@ export function AddEntityForm({
           onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), submit())}
         />
         <Button type="button" size="sm" disabled={pending} onClick={submit}>
-          <Plus size={14} />
+          <Plus size={14} strokeWidth={1.75} />
           Add
         </Button>
       </div>

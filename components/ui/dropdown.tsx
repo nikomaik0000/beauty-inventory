@@ -64,9 +64,9 @@ export function Dropdown<T extends string>({
           <motion.ul
             role="listbox"
             aria-label={ariaLabel}
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: animation.motion.fast, ease: animation.motion.ease }}
             className={cn(
               "absolute z-30 mt-2 max-h-72 min-w-[160px] overflow-y-auto rounded-dropdown border border-border bg-surface py-1 shadow-dropdown",
@@ -91,7 +91,7 @@ export function Dropdown<T extends string>({
                     )}
                   >
                     <span className="truncate">{opt.label}</span>
-                    {isSelected && <Check size={14} className="shrink-0" />}
+                    {isSelected && <Check size={14} strokeWidth={1.75} className="shrink-0" />}
                   </button>
                 </li>
               );
@@ -144,7 +144,7 @@ export function DropdownField<T extends string>({
           )}
         >
           <span className={cn("truncate", !selected && "text-textMuted")}>{selected?.label ?? placeholder}</span>
-          <ChevronDown size={15} className={cn("shrink-0 text-textMuted transition-transform duration-base", open && "rotate-180")} />
+          <ChevronDown size={14} strokeWidth={1.75} className={cn("shrink-0 text-textMuted transition-transform duration-base", open && "rotate-180")} />
         </button>
       )}
     />

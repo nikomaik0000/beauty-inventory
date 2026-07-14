@@ -90,7 +90,7 @@ export function SortMenu({ value, onChange }: { value: SortField; onChange: (v: 
                       isSelected ? "text-accentStrong" : "text-textPrimary",
                     )}
                   >
-                    <Check size={13} className={cn("shrink-0", !isSelected && "invisible")} />
+                    <Check size={14} strokeWidth={1.75} className={cn("shrink-0", !isSelected && "invisible")} />
                     <span className="truncate">{opt.label}</span>
                   </button>
                 </li>

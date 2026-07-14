@@ -10,25 +10,20 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowUpDown, Calendar, Package, PackageOpen, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteProduct } from "@/app/actions/products";
-import { formatCapacity, formatCategoryPath, formatExpiration, getExpirationStatus } from "@/lib/utils";
+import { formatCapacity, formatExpirationCompact } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
-
-const statusTone = {
-  expired: "danger",
-  urgent: "danger",
-  soon: "warning",
-  ok: "default",
-  none: "muted",
-  unknown: "muted",
-} as const;
 
 const columnHelper = createColumnHelper<ProductWithRelations>();
 
+/** Columns: 商品 · 品牌 · 容量 · 庫存 · 效期 · 開封 (+ an actions column
+ * for edit/delete, which isn't a data field). Category and the opened
+ * text badge were dropped — unnecessary in a compact overview; category
+ * is still fully editable per-product in the edit form and still drives
+ * search/filtering on the frontend. */
 export function ProductTable({ products }: { products: ProductWithRelations[] }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
   const [pending, startTransition] = useTransition();
@@ -39,11 +34,6 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       columnHelper.accessor("name", {
         header: "商品",
         cell: (info) => <span className="font-medium text-textPrimary">{info.getValue()}</span>,
-      }),
-      columnHelper.accessor((row) => formatCategoryPath(row.category?.name, row.subcategory?.name), {
-        id: "category",
-        header: "分類",
-        cell: (info) => <span className="text-textSecondary">{info.getValue()}</span>,
       }),
       columnHelper.accessor((row) => row.brand?.name ?? "—", {
         id: "brand",
@@ -59,16 +49,22 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       }),
       columnHelper.display({
         id: "expiration",
-        header: "截止日期",
-        cell: ({ row }) => {
-          const status = getExpirationStatus(row.original);
-          return <Badge tone={statusTone[status]}>{formatExpiration(row.original)}</Badge>;
-        },
+        header: "效期",
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-textSecondary">
+            <Calendar size={14} strokeWidth={1.75} />
+            {formatExpirationCompact(row.original)}
+          </span>
+        ),
       }),
       columnHelper.display({
         id: "opened",
-        header: "狀態",
-        cell: ({ row }) => (row.original.opened ? <Badge tone="muted">已開封</Badge> : <Badge tone="success">未開封</Badge>),
+        header: "開封",
+        cell: ({ row }) => (
+          <span className="flex justify-center text-textMuted" role="img" aria-label={row.original.opened ? "已開封" : "未開封"}>
+            {row.original.opened ? <PackageOpen size={16} strokeWidth={1.75} /> : <Package size={16} strokeWidth={1.75} className="opacity-50" />}
+          </span>
+        ),
       }),
       columnHelper.display({
         id: "actions",
@@ -77,10 +73,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           <div className="flex items-center justify-end gap-1">
             <Link
               href={`/admin/products/${row.original.id}/edit`}
-              className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
+              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
               aria-label="編輯商品"
             >
-              <Pencil size={14} />
+              <Pencil size={16} strokeWidth={1.75} />
             </Link>
             <button
               type="button"
@@ -90,10 +86,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 setDeletingId(row.original.id);
                 startTransition(() => deleteProduct(row.original.id));
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
               aria-label="刪除商品"
             >
-              <Trash2 size={14} />
+              <Trash2 size={16} strokeWidth={1.75} />
             </button>
           </div>
         ),
@@ -127,24 +123,29 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
     <Card>
       {/* Tablet / desktop: a fluid table-fixed layout (no forced
           min-width), so it fits the available width naturally instead
-          of needing a horizontal scrollbar. */}
+          of needing a horizontal scrollbar. Headers use the same CJK
+          serif family as the product title, with a touch of letter
+          spacing, per the Phase 4C typography spec. */}
       <div className="hidden lg:block">
         <table className="w-full table-fixed text-left text-sm">
           <colgroup>
-            <col style={{ width: "20%" }} />
-            <col style={{ width: "15%" }} />
+            <col style={{ width: "26%" }} />
+            <col style={{ width: "18%" }} />
             <col style={{ width: "12%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "13%" }} />
             <col style={{ width: "10%" }} />
-            <col style={{ width: "14%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "10%" }} />
           </colgroup>
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="h-11 border-b border-divider">
                 {hg.headers.map((header) => (
-                  <th key={header.id} className="truncate px-4 align-middle text-xs font-medium text-textMuted">
+                  <th
+                    key={header.id}
+                    className="truncate px-4 align-middle text-xs font-medium tracking-wide text-textMuted"
+                    style={{ fontFamily: "var(--font-serif-cjk)" }}
+                  >
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
@@ -153,7 +154,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                         disabled={!header.column.getCanSort()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.getCanSort() && <ArrowUpDown size={11} />}
+                        {header.column.getCanSort() && <ArrowUpDown size={11} strokeWidth={1.75} />}
                       </button>
                     )}
                   </th>
@@ -163,7 +164,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="h-12 border-b border-divider last:border-0 hover:bg-surfaceMuted/50">
+              <tr key={row.id} className="h-12 border-b border-divider last:border-0">
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id} className="truncate px-4 align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -179,24 +180,21 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           force horizontal scrolling on a phone. */}
       <ul className="divide-y divide-divider lg:hidden">
         {products.map((p) => {
-          const status = getExpirationStatus(p);
+          const capacityText = formatCapacity(p.capacity);
           return (
             <li key={p.id} className="px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-textPrimary">{p.name}</p>
-                  <p className="mt-0.5 truncate text-xs text-textSecondary">
-                    {p.brand?.name ? `${p.brand.name} · ` : ""}
-                    {formatCategoryPath(p.category?.name, p.subcategory?.name)}
-                  </p>
+                  {p.brand?.name && <p className="mt-0.5 truncate text-xs text-textSecondary">{p.brand.name}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <Link
                     href={`/admin/products/${p.id}/edit`}
-                    className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
+                    className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
                     aria-label="編輯商品"
                   >
-                    <Pencil size={14} />
+                    <Pencil size={16} strokeWidth={1.75} />
                   </Link>
                   <button
                     type="button"
@@ -206,20 +204,23 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                       setDeletingId(p.id);
                       startTransition(() => deleteProduct(p.id));
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
                     aria-label="刪除商品"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} strokeWidth={1.75} />
                   </button>
                 </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <Badge tone={statusTone[status]} className="text-[11px]">{formatExpiration(p)}</Badge>
-                <span className="text-xs text-textMuted">
-                  {formatCapacity(p.capacity) ? `${formatCapacity(p.capacity)} · ` : ""}{p.quantity}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-textSecondary">
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={13} strokeWidth={1.75} />
+                  {formatExpirationCompact(p)}
                 </span>
-                {p.opened ? <Badge tone="muted">已開封</Badge> : <Badge tone="success">未開封</Badge>}
+                <span>{capacityText ? `${capacityText} · ` : ""}{p.quantity}</span>
+                <span className="text-textMuted" role="img" aria-label={p.opened ? "已開封" : "未開封"}>
+                  {p.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} className="opacity-50" />}
+                </span>
               </div>
             </li>
           );

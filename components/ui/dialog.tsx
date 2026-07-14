@@ -58,10 +58,10 @@ export function Dialog({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            initial={{ opacity: 0, scale: 0.97, y: 4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: 4 }}
-            transition={{ duration: animation.motion.base, ease: animation.motion.ease }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: animation.motion.base }}
             className={cn(
               "relative flex max-h-[85vh] w-full flex-col rounded-dialog border border-border bg-surface shadow-dialog",
               maxWidthClassName,
@@ -75,7 +75,7 @@ export function Dialog({
                 aria-label={`關閉${title}`}
                 className="text-textMuted hover:text-textPrimary"
               >
-                <X size={16} />
+                <X size={16} strokeWidth={1.75} />
               </button>
             </div>
 

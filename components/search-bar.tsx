@@ -6,7 +6,8 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
   return (
     <div className="relative flex-1">
       <Search
-        size={16}
+        size={20}
+        strokeWidth={1.75}
         className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-textMuted"
       />
       <input
@@ -14,7 +15,7 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="搜尋商品…"
-        className="h-10 w-full rounded-input border border-border bg-searchBackground pl-10 pr-9 text-sm text-textPrimary placeholder:text-textMuted focus:border-accent transition-colors"
+        className="h-10 w-full rounded-input border border-border bg-searchBackground pl-11 pr-9 text-sm text-textPrimary placeholder:text-textMuted"
       />
       {value && (
         <button
@@ -23,7 +24,7 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
           onClick={() => onChange("")}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-textMuted hover:text-textPrimary"
         >
-          <X size={15} />
+          <X size={14} strokeWidth={1.75} />
         </button>
       )}
     </div>

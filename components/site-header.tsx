@@ -19,7 +19,7 @@ export function SiteHeader() {
           href="/admin"
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-button border border-border bg-surface px-3.5 text-xs font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
         >
-          <Settings size={14} />
+          <Settings size={14} strokeWidth={1.75} />
           <span className="hidden sm:inline">後台</span>
         </Link>
       </div>

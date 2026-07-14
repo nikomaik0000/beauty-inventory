@@ -18,7 +18,7 @@ export default function SettingsPage() {
             type="submit"
             className="flex items-center gap-2 rounded-input border border-border bg-surface px-3.5 py-2 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
           >
-            <LogOut size={15} />
+            <LogOut size={20} strokeWidth={1.75} />
             登出
           </button>
         </form>
