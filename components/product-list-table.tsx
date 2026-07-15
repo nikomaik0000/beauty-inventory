@@ -12,7 +12,7 @@ import type { ProductWithRelations } from "@/lib/types";
  * content. Headers use the same CJK serif family as the product title,
  * with a touch of letter spacing. Expiration is now plain text with a
  * calendar glyph (no colored badge) to match the card view. */
-const COLUMN_WIDTHS = ["26%", "18%", "10%", "10%", "15%", "16%", "5%"];
+const COLUMN_WIDTHS = ["30%", "15%", "7%", "7%", "1%", "20%", "5%"];
 
 export function ProductListTable({ products }: { products: ProductWithRelations[] }) {
   return (
@@ -28,12 +28,12 @@ export function ProductListTable({ products }: { products: ProductWithRelations[
         <thead>
           <tr className="h-11 border-b border-divider text-xs font-medium tracking-wide text-textMuted">
             <th className="truncate px-4 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>商品</th>
-            <th className="truncate px-3 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>品牌</th>
-            <th className="truncate px-3 text-right font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>容量</th>
-            <th className="truncate px-3 text-right font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>庫存</th>
-            <th className="truncate px-3 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>效期</th>
+            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>品牌</th>
+            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>容量</th>
+            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>庫存</th>
+            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>效期</th>
             <th className="truncate px-3 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>備註</th>
-            <th className="truncate px-4 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>開封</th>
+            <th className="truncate px-4 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -42,15 +42,10 @@ export function ProductListTable({ products }: { products: ProductWithRelations[
             return (
               <tr key={p.id} className="h-12 border-b border-divider last:border-0">
                 <td className="truncate px-4 align-middle font-medium text-textPrimary">{p.name}</td>
-                <td className="truncate px-3 align-middle text-sm font-medium text-textPrimary">{p.brand?.name ?? "—"}</td>
-                <td className="truncate px-3 text-right align-middle text-textSecondary">{capacityText ?? ""}</td>
-                <td className="truncate px-3 text-right align-middle text-textSecondary">{p.quantity}</td>
-                <td className="truncate px-3 align-middle text-textSecondary">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar size={14} strokeWidth={1.75} />
-                    {formatExpirationCompact(p)}
-                  </span>
-                </td>
+                <td className="truncate px-3 text-center align-middle text-sm font-medium text-textPrimary">{p.brand?.name ?? "—"}</td>
+                <td className="truncate px-3 text-center align-middle text-textSecondary">{capacityText ?? ""}</td>
+                <td className="truncate px-3 text-center align-middle text-textSecondary">{p.quantity}</td>
+                <td className="truncate px-3 text-center align-middle text-textSecondary text-xs tabular-nums">{formatExpirationCompact(p)} </td>
                 <td className="truncate px-3 align-middle text-xs text-textSecondary">{p.notes ?? ""}</td>
                 <td className="px-4 text-center align-middle text-textMuted">
                   <span role="img" aria-label={p.opened ? "已開封" : "未開封"}>
@@ -81,18 +76,17 @@ export function ProductListTable({ products }: { products: ProductWithRelations[
                 {capacityText && (
                   <span className="text-xs text-textSecondary">
                     <span className="text-textLabel">容量</span> {capacityText}
+                    <span className="flex-row min-w-[10px] rounded-input bg-surfaceMuted px-2 text-xs ms-2 font-medium text-textSecondary">{p.quantity}</span>
                   </span>
                 )}
-                <span className="flex h-6 min-w-[28px] items-center justify-center rounded-input bg-surfaceMuted px-1.5 text-xs font-medium text-textSecondary">
-                  {p.quantity}
-                </span>
-                <span className="text-textMuted" role="img" aria-label={p.opened ? "已開封" : "未開封"}>
-                  {p.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} className="opacity-50" />}
-                </span>
                 <span className="flex items-center gap-1 text-xs text-textSecondary">
                   <Calendar size={12} strokeWidth={1.75} />
                   {formatExpirationCompact(p)}
                 </span>
+                <span className="text-textMuted" role="img" aria-label={p.opened ? "已開封" : "未開封"}>
+                  {p.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} className="opacity-50" />}
+                </span>
+
               </div>
             </li>
           );

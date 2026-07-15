@@ -195,7 +195,7 @@ export function ProductForm({
       </div>
 
       <div className="flex flex-col gap-2.5 rounded-input border border-border bg-surfaceMuted/50 p-4">
-        <label className="flex items-center gap-2 text-sm text-textSecondary">
+        <label className="flex items-center gap-2 text-sm text-textPrimary">
           <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("opened")} />
           已開封
         </label>

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "jcb-food-japan",
+    "cardId": "fubon-jcb",
+    "title": "JCB 食在日系活動登錄",
+    "frequency": "monthly",
+    "description": "每月一卡領一次，需登錄才能享有日系通路加碼回饋",
+    "registerUrl": ""
+  },
+  {
+    "id": "starbucks-register",
+    "cardId": "ctbc-uni",
+    "title": "星巴克活動登錄",
+    "frequency": "monthly",
+    "dayOfMonth": 1,
+    "openTime": "10:30",
+    "description": "每月1號10:30開放登入，星巴克回饋加碼活動",
+    "registerUrl": ""
+  },
+  {
+    "id": "ctbc-app-coupon",
+    "cardId": "ctbc-uni",
+    "title": "中信APP領優惠券",
+    "frequency": "monthly",
+    "description": "每月登入中信銀行APP領取優惠券，可享統一企業集團加碼回饋",
+    "registerUrl": ""
+  },
+  {
+    "id": "fubon-jcb-quarterly",
+    "cardId": "fubon-jcb",
+    "title": "永豐JCB 海外活動登錄",
+    "frequency": "quarterly",
+    "description": "每季需登錄，享日本/韓國/泰國實體消費累計滿20,000元回饋5%（每季上限1,000元）",
+    "registerUrl": ""
+  },
+  {
+    "id": "jcb-visa-register",
+    "cardId": "fubon-jcb",
+    "title": "JCB VISA活動登錄",
+    "frequency": "monthly",
+    "description": "每月需確認JCB/VISA活動登錄狀態",
+    "registerUrl": ""
+  },
+  {
+    "id": "klook-coupon",
+    "cardId": "fubon-jcb",
+    "title": "Klook 領取優惠券",
+    "frequency": "monthly",
+    "description": "Klook每月優惠碼：KJCB26月份",
+    "couponCode": "KJCB26",
+    "registerUrl": "https://www.klook.com/"
+  },
+  {
+    "id": "visa-select-register",
+    "cardId": "fubon-jcb",
+    "title": "Visa Select優選回饋登錄",
+    "frequency": "monthly",
+    "description": "Visa Select優選回饋活動登錄",
+    "registerUrl": "https://visaselectrewardtw.com/campaigns"
+  },
+  {
+    "id": "esun-unicard-subscription",
+    "cardId": "esun-unicard",
+    "title": "玉山Unicard 訂閱確認",
+    "frequency": "monthly",
+    "description": "確認訂閱狀態（149點 或 玉山平均資產>=30萬+前月刷卡滿3萬），享4.5%回饋",
+    "registerUrl": ""
+  },
+  {
+    "id": "ctbc-steppoint",
+    "cardId": "ctbc-uni",
+    "title": "中信統一踩點任務",
+    "frequency": "monthly",
+    "description": "每月於不同統一企業品牌消費（消費5家加碼4%，上限500點）",
+    "registerUrl": ""
+  }
+]

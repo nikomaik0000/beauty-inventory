@@ -10,7 +10,7 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Calendar, Package, PackageOpen, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Package, PackageOpen, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteProduct } from "@/app/actions/products";
@@ -23,7 +23,12 @@ const columnHelper = createColumnHelper<ProductWithRelations>();
  * for edit/delete, which isn't a data field). Category and the opened
  * text badge were dropped — unnecessary in a compact overview; category
  * is still fully editable per-product in the edit form and still drives
- * search/filtering on the frontend. */
+ * search/filtering on the frontend.
+ *
+ * 效期 is an accessor column (sortable — undated products sort last via
+ * the "9999-99-99" placeholder key) even though its cell renders plain
+ * text with no icon; using `columnHelper.display()` here would silently
+ * drop sorting, which is what happened previously. */
 export function ProductTable({ products }: { products: ProductWithRelations[] }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
   const [pending, startTransition] = useTransition();
@@ -33,35 +38,32 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
     () => [
       columnHelper.accessor("name", {
         header: "商品",
-        cell: (info) => <span className="font-medium text-textPrimary">{info.getValue()}</span>,
+        cell: (info) => <span className="font-medium text-textPrimary " >{info.getValue()}</span>,
       }),
       columnHelper.accessor((row) => row.brand?.name ?? "—", {
         id: "brand",
         header: "品牌",
+        cell: (info) => <span className="block text-center">{info.getValue()}</span>,
       }),
       columnHelper.accessor((row) => formatCapacity(row.capacity) ?? "—", {
         id: "capacity",
         header: "容量",
+        cell: (info) => <span className="block tabular-nums text-center">{info.getValue()}</span>,
       }),
       columnHelper.accessor("quantity", {
         header: "庫存",
-        cell: (info) => <span>{info.getValue()}</span>,
+        cell: (info) => <span className="block text-center">{info.getValue()}</span>,
       }),
-      columnHelper.display({
+      columnHelper.accessor((row) => row.expiration_date ?? "9999-99-99", {
         id: "expiration",
         header: "效期",
-        cell: ({ row }) => (
-          <span className="flex items-center gap-1.5 text-textSecondary">
-            <Calendar size={14} strokeWidth={1.75} />
-            {formatExpirationCompact(row.original)}
-          </span>
-        ),
+        cell: ({ row }) => <span className="block text-center tabular-nums text-xs">{formatExpirationCompact(row.original)}</span>,
       }),
       columnHelper.display({
         id: "opened",
         header: "開封",
         cell: ({ row }) => (
-          <span className="flex justify-center text-textMuted" role="img" aria-label={row.original.opened ? "已開封" : "未開封"}>
+          <span className="flex justify-center text-textPrimary" role="img" aria-label={row.original.opened ? "已開封" : "未開封"}>
             {row.original.opened ? <PackageOpen size={16} strokeWidth={1.75} /> : <Package size={16} strokeWidth={1.75} className="opacity-50" />}
           </span>
         ),
@@ -73,10 +75,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
           <div className="flex items-center justify-end gap-1">
             <Link
               href={`/admin/products/${row.original.id}/edit`}
-              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
+              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:text-danger disabled:opacity-50"
               aria-label="編輯商品"
             >
-              <Pencil size={16} strokeWidth={1.75} />
+              <Pencil size={14} strokeWidth={1.75} />
             </Link>
             <button
               type="button"
@@ -86,10 +88,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 setDeletingId(row.original.id);
                 startTransition(() => deleteProduct(row.original.id));
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger disabled:opacity-50"
+              className="flex h-9 w-9 items-center justify-center rounded-input text-textSecondary  hover:text-danger disabled:opacity-50"
               aria-label="刪除商品"
             >
-              <Trash2 size={16} strokeWidth={1.75} />
+              <Trash2 size={14} strokeWidth={1.75} />
             </button>
           </div>
         ),
@@ -118,20 +120,20 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       </div>
     );
   }
-
+  const centerHeaders = ["brand","capacity", "quantity", "expiration", "opened"];
   return (
     <Card>
       {/* Tablet / desktop: a fluid table-fixed layout (no forced
           min-width), so it fits the available width naturally instead
           of needing a horizontal scrollbar. Headers use the same CJK
           serif family as the product title, with a touch of letter
-          spacing, per the Phase 4C typography spec. */}
+          spacing. */}
       <div className="hidden lg:block">
         <table className="w-full table-fixed text-left text-sm">
           <colgroup>
-            <col style={{ width: "26%" }} />
-            <col style={{ width: "18%" }} />
-            <col style={{ width: "12%" }} />
+            <col style={{ width: "33%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "10%" }} />
             <col style={{ width: "10%" }} />
             <col style={{ width: "16%" }} />
             <col style={{ width: "8%" }} />
@@ -143,14 +145,23 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 {hg.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="truncate px-4 align-middle text-xs font-medium tracking-wide text-textMuted"
+                    className={`truncate px-4 align-middle text-xs font-medium tracking-wide text-textPrimary ${
+                      centerHeaders.includes(header.id)
+                      ? "justify-center"
+                      : "justify-start"
+                  }`}
+
                     style={{ fontFamily: "var(--font-serif-cjk)" }}
                   >
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
                         onClick={header.column.getToggleSortingHandler()}
-                        className="flex items-center gap-1 hover:text-textPrimary disabled:cursor-default"
+                        className={`flex items-center gap-1 hover:text-accentStrong disabled:cursor-default ${
+                                  centerHeaders.includes(header.id)
+                                    ? "justify-center w-full"
+                                    : "justify-start"
+                                }`}
                         disabled={!header.column.getCanSort()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -186,7 +197,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-textPrimary">{p.name}</p>
-                  {p.brand?.name && <p className="mt-0.5 truncate text-xs text-textSecondary">{p.brand.name}</p>}
+                  {p.brand?.name && <p className="mt-0.5 truncate  text-xs text-textPrimary">{p.brand.name}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <Link
@@ -212,13 +223,10 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                 </div>
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-textSecondary">
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={13} strokeWidth={1.75} />
-                  {formatExpirationCompact(p)}
-                </span>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-textPrimary">
+                <span>{formatExpirationCompact(p)}</span>
                 <span>{capacityText ? `${capacityText} · ` : ""}{p.quantity}</span>
-                <span className="text-textMuted" role="img" aria-label={p.opened ? "已開封" : "未開封"}>
+                <span role="img" aria-label={p.opened ? "已開封" : "未開封"}>
                   {p.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} className="opacity-50" />}
                 </span>
               </div>

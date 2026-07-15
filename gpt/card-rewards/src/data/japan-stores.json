@@ -1,0 +1,151 @@
+[
+  {
+    "id": "donki",
+    "name": "唐吉軻德",
+    "nameJa": "ドン・キホーテ",
+    "category": "drugstore",
+    "emoji": "🐧",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "fubon-jcb", "rate": "5%", "note": "需季度登錄" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "matsumoto",
+    "name": "松本清",
+    "nameJa": "マツモトキヨシ",
+    "category": "drugstore",
+    "emoji": "💊",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "bic-camera",
+    "name": "BIC CAMERA",
+    "nameJa": "ビックカメラ",
+    "category": "electronics",
+    "emoji": "📷",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "yodobashi",
+    "name": "Yodobashi Camera",
+    "nameJa": "ヨドバシカメラ",
+    "category": "electronics",
+    "emoji": "📱",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "uniqlo",
+    "name": "UNIQLO",
+    "nameJa": "ユニクロ",
+    "category": "fashion",
+    "emoji": "👕",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" }
+    ]
+  },
+  {
+    "id": "gu",
+    "name": "GU",
+    "nameJa": "ジーユー",
+    "category": "fashion",
+    "emoji": "👗",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "指定商店6%+基本2.5%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "ApplePay+登錄+商店3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" }
+    ]
+  },
+  {
+    "id": "lawson",
+    "name": "LAWSON",
+    "nameJa": "ローソン",
+    "category": "convenience",
+    "emoji": "🏪",
+    "bestCards": [
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "便利商店加碼3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "familymart-jp",
+    "name": "FamilyMart（日本）",
+    "nameJa": "ファミリーマート",
+    "category": "convenience",
+    "emoji": "🏪",
+    "bestCards": [
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "便利商店加碼3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "7eleven-jp",
+    "name": "7-ELEVEN（日本）",
+    "nameJa": "セブンイレブン",
+    "category": "convenience",
+    "emoji": "7️⃣",
+    "bestCards": [
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "便利商店加碼3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券+踩點" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "suica",
+    "name": "SUICA / PASMO / ICOCA",
+    "nameJa": "Suica",
+    "category": "transport",
+    "emoji": "🚇",
+    "bestCards": [
+      { "cardId": "esun-beibi", "rate": "4%+", "note": "日本交通卡儲值加碼" },
+      { "cardId": "esun-kumamon", "rate": "2.5%", "note": "基本回饋+免手續費" },
+      { "cardId": "fubon-dahu-plus", "rate": "6%", "note": "需資產100萬" }
+    ]
+  },
+  {
+    "id": "tokyo-disneyland",
+    "name": "東京迪士尼",
+    "nameJa": "東京ディズニーランド",
+    "category": "amusement",
+    "emoji": "🏰",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "遊樂園加碼6%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "遊樂園加碼3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券" }
+    ]
+  },
+  {
+    "id": "usj",
+    "name": "大阪環球影城(USJ)",
+    "nameJa": "ユニバーサル・スタジオ・ジャパン",
+    "category": "amusement",
+    "emoji": "🎡",
+    "bestCards": [
+      { "cardId": "esun-kumamon", "rate": "8.5%", "note": "遊樂園加碼6%" },
+      { "cardId": "jichi-card", "rate": "最高8%", "note": "遊樂園加碼3%" },
+      { "cardId": "ctbc-uni", "rate": "最高11%", "note": "需登入APP領券" }
+    ]
+  }
+]
