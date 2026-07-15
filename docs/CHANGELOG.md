@@ -1,5 +1,48 @@
 # Changelog
 
+## Data Management — CSV import / export
+- Added four toolbar buttons on `/admin` beside 新增商品: 匯入 CSV, 匯出
+  CSV, 下載範例 — same toolbar/button style, no other UI changes.
+- **Export** (`lib/csv.ts`, `lib/csv-import.ts`): downloads
+  `beauty-inventory-YYYY-MM-DD.csv`, UTF-8 with BOM (Excel-compatible),
+  with a `Version,1` line before the header for future format changes.
+  Exports 商品/品牌/分類/容量/庫存/效期/已開封/備註 only — no id, image
+  URL, storage path, or timestamps.
+- **Filtered export**: `/admin` now has its own Search + Filter row
+  (`components/admin/admin-product-manager.tsx`), reusing the existing
+  `SearchBar`/`FilterPanel` components as-is. Export scopes to whatever
+  is currently visible — search, category, subcategory, brand, and
+  opened-status filters all apply; export falls back to every product
+  when no filter is active. Import always matches against the *full*
+  product set regardless of what's currently filtered, since importing
+  should never be scoped by an unrelated view filter.
+- **Import**: file picker or drag-and-drop → parse → preview (total /
+  new / updated / skipped / invalid rows, with row-numbered reasons) →
+  explicit confirm → import → summary (新增/更新/略過/失敗, all four
+  counts). Never imports immediately on file selection.
+- **Matching**: rows are matched to existing products by 商品 + 品牌
+  (case-insensitive). Matches update category, capacity, quantity,
+  expiration, opened (and opened_date, computed the same way the
+  existing 開封 toggle does), and notes only — subcategory, PAO months,
+  and the image are left untouched. Unmatched rows create a new
+  product. Brands are created on the fly (reusing `upsertBrandId` from
+  `app/actions/products.ts`, now exported); categories must already
+  exist — an unrecognized 分類 name fails validation rather than
+  silently creating one.
+- **Validation**: missing name/brand, non-numeric capacity/quantity,
+  invalid date, and unknown category are all caught before import, with
+  the offending row number shown. Duplicate 商品+品牌 rows within the
+  same file are skipped (first occurrence wins) rather than double-
+  processed, and that skipped count now also shows in the final import
+  summary, not just the preview. Import never touches images — no
+  upload, replace, or delete happens as part of this flow.
+- New files: `lib/csv.ts` (RFC4180-ish parse/serialize + BOM download,
+  no new dependency), `lib/csv-import.ts` (export row mapping + shared
+  validate/match logic used by both the preview and the server action),
+  `app/actions/csv-import.ts` (the actual writes), `components/admin/
+  admin-product-manager.tsx`, `components/admin/data-toolbar.tsx`,
+  `components/admin/csv-import-dialog.tsx`.
+
 ## Phase 4C — table redesign, icon standardization, motion/interaction rules
 - **Frontend list table**: reordered to 商品·品牌·容量·庫存·效期·備註·開封;
   expiration is now plain text with a calendar glyph (no colored badge)
