@@ -43,13 +43,7 @@ export function DataToolbar({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <Link href="/admin/products/new">
-          <Button size="sm">
-            <Plus size={14} strokeWidth={1.75} />
-            新增商品
-          </Button>
-        </Link>
+      <div className="flex flex-wrap items-center gap-3">
         <Button size="sm" variant="secondary" onClick={() => setImportOpen(true)}>
           <Upload size={14} strokeWidth={1.75} />
           匯入 CSV
@@ -62,6 +56,18 @@ export function DataToolbar({
           <Download size={14} strokeWidth={1.75} />
           下載範例
         </Button>
+        {/* Primary action stays visually emphasized (filled `Button`
+            default variant). `ml-auto` pins it to the far right of this
+            row on its own — no order-* juggling, and it keeps working
+            correctly if this row's container ever grows wider (e.g. a
+            future full-width toolbar) since it's real flex spacing, not
+            just a fixed visual position. */}
+        <Link href="/admin/products/new" className="ml-auto">
+          <Button size="sm">
+            <Plus size={14} strokeWidth={1.75} />
+            新增商品
+          </Button>
+        </Link>
       </div>
 
       <CsvImportDialog

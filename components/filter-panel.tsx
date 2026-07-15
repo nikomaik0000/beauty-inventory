@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolbarButton } from "@/components/ui/toolbar-button";
@@ -34,6 +34,7 @@ export function FilterPanel({
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<ProductFilters>(filters);
+  const dialogBodyRef = useRef<HTMLDivElement>(null);
 
   // Re-sync the draft to whatever is currently applied every time the
   // modal opens, so stale edits from a previous open (that were
@@ -74,6 +75,7 @@ export function FilterPanel({
         open={open}
         onClose={() => setOpen(false)}
         title="篩選"
+        contentRef={dialogBodyRef}
         footer={
           <>
             <button type="button" onClick={handleClearAll} className="text-xs font-medium text-accentStrong hover:underline">
@@ -93,6 +95,7 @@ export function FilterPanel({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-textSecondary">大分類</label>
           <DropdownField
+            boundaryRef={dialogBodyRef}
             value={draft.categoryId ?? ""}
             onChange={(v) => setDraft((prev) => ({ ...prev, categoryId: v || null, subcategoryId: null }))}
             placeholder="全部分類"
@@ -104,6 +107,7 @@ export function FilterPanel({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-textSecondary">小分類</label>
           <DropdownField
+            boundaryRef={dialogBodyRef}
             value={draft.subcategoryId ?? ""}
             onChange={(v) => update("subcategoryId", v || null)}
             placeholder="全部小分類"
@@ -116,6 +120,7 @@ export function FilterPanel({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-textSecondary">品牌</label>
           <DropdownField
+            boundaryRef={dialogBodyRef}
             value={draft.brandId ?? ""}
             onChange={(v) => update("brandId", v || null)}
             placeholder="全部品牌"
@@ -127,6 +132,7 @@ export function FilterPanel({
         <div>
           <label className="mb-1.5 block text-xs font-medium text-textSecondary">開封狀態</label>
           <DropdownField
+            boundaryRef={dialogBodyRef}
             value={draft.openedStatus}
             onChange={(v) => update("openedStatus", v as ProductFilters["openedStatus"])}
             placeholder="全部"
