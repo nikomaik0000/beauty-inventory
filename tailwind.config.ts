@@ -33,6 +33,7 @@ const config: Config = {
         badgeBg: "var(--color-badge-bg)",
         badgeBorder: "var(--color-badge-border)",
         badgeText: "var(--color-badge-text)",
+        filterCountBadgeBg: "var(--color-filter-count-badge-bg)",
         searchBackground: "var(--color-search-background)",
         danger: "var(--color-danger)",
         dangerSoft: "var(--color-danger-soft)",

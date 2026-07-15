@@ -8,7 +8,7 @@ import { productSchema, type ProductFormValues } from "@/lib/validations";
 
 /** Finds a brand by name (case-insensitive) or creates it: only brands
  * actually in use appear anywhere else in the app. */
-async function upsertBrandId(name: string): Promise<string | null> {
+export async function upsertBrandId(name: string): Promise<string | null> {
   const trimmed = name.trim();
   if (!trimmed) return null;
 

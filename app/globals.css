@@ -45,6 +45,10 @@
   --color-badge-bg: #F3EEE2;
   --color-badge-border: #E0D6C2;
   --color-badge-text: #786A52;
+  /* Active-filter-count badge on toolbar buttons (e.g. FilterPanel's
+     entry point) — deliberately separate from --color-badge-* above,
+     which is the unrelated category-tag Badge component's palette. */
+  --color-filter-count-badge-bg: #DDD5CC;
   --color-search-background: #F4EFE6;
   --color-danger: #B0574A;
   --color-danger-soft: #F5E4DF;

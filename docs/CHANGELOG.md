@@ -1,5 +1,117 @@
 # Changelog
 
+## Phase 4E.1 — UI polish follow-up
+- **Toolbar layout** (`components/admin/data-toolbar.tsx`): replaced
+  `order-first sm:order-last` with `ml-auto` on 新增商品 — same visual
+  result, but it's real flex spacing instead of a responsive reorder
+  trick, so it stays correct if the row ever gets wider and stays easy
+  to extend (a new secondary button is just another item before it).
+- **Filter dialog layout** (`components/ui/dialog.tsx`): max-height
+  85vh → 80vh; added `overflow-hidden` on the outer shell and, more
+  importantly, `min-h-0` on the scrollable body. Without `min-h-0` a
+  `flex-1` child won't actually shrink to fit — it was expanding past
+  its allotted space instead of triggering its own `overflow-y-auto`,
+  which is what actually caused "the whole dialog scrolls" (the header
+  and footer were already outside the scroll area). Also added an
+  optional `contentRef` prop so a caller can use the scroll body as a
+  boundary for its own popups (used by the Filter dialog below); no
+  other `Dialog` usage is affected since it's optional.
+- **Dropdown boundary + keyboard nav** (`components/ui/dropdown.tsx`):
+  - Added `boundaryRef`: when set, the popup's open-up/open-down and
+    max-height math clips against that element's bounds instead of the
+    viewport, so it can no longer render underneath the dialog's fixed
+    footer. `FilterPanel` wires its dialog body ref through to all four
+    `DropdownField`s (`components/filter-panel.tsx`).
+  - Replaced the window-level Escape listener with keyboard handling on
+    the trigger's own container (`onKeyDown`), and the Escape handler
+    now calls `stopPropagation()`. Previously, opening a Select inside
+    the Filter dialog and pressing Escape closed *both* the dropdown
+    and the dialog in one press, because both had independent
+    window-level listeners; now the dropdown consumes the key first and
+    the dialog only sees a second, later Escape press.
+  - Added Arrow Up/Down to move a highlighted option and Enter to
+    select it, matching native `<select>` behavior. Tab is untouched —
+    it already moved focus normally since nothing intercepted it.
+- **Filter badge** (`components/ui/toolbar-button.tsx`): fixed 24×24
+  circle (`h-6 w-6 rounded-full`) instead of a growable pill, still
+  flex-centered; colors unchanged from the prior pass. It already hid
+  automatically at count 0.
+
+## Phase 4E — UI polish & filter improvements
+- **Select positioning bug fix** (`components/ui/dropdown.tsx`): the
+  option list is now portaled to `document.body` and positioned with
+  `position: fixed`, computed from the trigger's bounding rect —
+  Popper-style "flip": opens downward when there's room, upward when
+  there isn't (based on available viewport space above vs. below), and
+  its max-height is clamped to whichever space it's using. This is why
+  it was clipped by the Filter dialog and showed two scrollbars before:
+  the list was `position: absolute` inside the dialog's own
+  `overflow-y-auto` content area. Trigger styling is unchanged; only
+  the popup's positioning/mounting changed. `SortMenu` is a separate,
+  already-self-contained component and wasn't touched.
+- **Filter dialog scrolling**: already correct before this phase (the
+  Dialog's footer sits outside the scrollable content area) — the
+  perceived "whole dialog scrolls" issue was actually the Select
+  clipping/double-scrollbar bug above; fixing that resolved this too,
+  with no changes needed to `components/ui/dialog.tsx`.
+- **Filter badge colors** (`components/ui/toolbar-button.tsx`): the
+  active-filter-count badge is now `#DDD5CC` background / `#555555`
+  text (the latter already existed as `--color-text-primary`), via a
+  new `--color-filter-count-badge-bg` token — kept deliberately
+  separate from `--color-badge-*`, which is the unrelated category-tag
+  `Badge` component's palette, so this doesn't recolor anything else.
+  Size, shape, and position unchanged.
+- **Toolbar order/spacing/hierarchy** (`components/admin/
+  data-toolbar.tsx`): 新增商品 now sits at the far right after 匯入
+  CSV / 匯出 CSV / 下載範例 on desktop (`order-first sm:order-last`,
+  so it wraps to the front on narrow widths instead of reordering);
+  button gap increased from `gap-2` to `gap-3`. Primary/secondary
+  button hierarchy (新增商品 filled, the CSV actions outlined) was
+  already in place from Phase 01 and needed no change.
+
+## Data Management — CSV import / export
+- Added four toolbar buttons on `/admin` beside 新增商品: 匯入 CSV, 匯出
+  CSV, 下載範例 — same toolbar/button style, no other UI changes.
+- **Export** (`lib/csv.ts`, `lib/csv-import.ts`): downloads
+  `beauty-inventory-YYYY-MM-DD.csv`, UTF-8 with BOM (Excel-compatible),
+  with a `Version,1` line before the header for future format changes.
+  Exports 商品/品牌/分類/容量/庫存/效期/已開封/備註 only — no id, image
+  URL, storage path, or timestamps.
+- **Filtered export**: `/admin` now has its own Search + Filter row
+  (`components/admin/admin-product-manager.tsx`), reusing the existing
+  `SearchBar`/`FilterPanel` components as-is. Export scopes to whatever
+  is currently visible — search, category, subcategory, brand, and
+  opened-status filters all apply; export falls back to every product
+  when no filter is active. Import always matches against the *full*
+  product set regardless of what's currently filtered, since importing
+  should never be scoped by an unrelated view filter.
+- **Import**: file picker or drag-and-drop → parse → preview (total /
+  new / updated / skipped / invalid rows, with row-numbered reasons) →
+  explicit confirm → import → summary (新增/更新/略過/失敗, all four
+  counts). Never imports immediately on file selection.
+- **Matching**: rows are matched to existing products by 商品 + 品牌
+  (case-insensitive). Matches update category, capacity, quantity,
+  expiration, opened (and opened_date, computed the same way the
+  existing 開封 toggle does), and notes only — subcategory, PAO months,
+  and the image are left untouched. Unmatched rows create a new
+  product. Brands are created on the fly (reusing `upsertBrandId` from
+  `app/actions/products.ts`, now exported); categories must already
+  exist — an unrecognized 分類 name fails validation rather than
+  silently creating one.
+- **Validation**: missing name/brand, non-numeric capacity/quantity,
+  invalid date, and unknown category are all caught before import, with
+  the offending row number shown. Duplicate 商品+品牌 rows within the
+  same file are skipped (first occurrence wins) rather than double-
+  processed, and that skipped count now also shows in the final import
+  summary, not just the preview. Import never touches images — no
+  upload, replace, or delete happens as part of this flow.
+- New files: `lib/csv.ts` (RFC4180-ish parse/serialize + BOM download,
+  no new dependency), `lib/csv-import.ts` (export row mapping + shared
+  validate/match logic used by both the preview and the server action),
+  `app/actions/csv-import.ts` (the actual writes), `components/admin/
+  admin-product-manager.tsx`, `components/admin/data-toolbar.tsx`,
+  `components/admin/csv-import-dialog.tsx`.
+
 ## Phase 4C — table redesign, icon standardization, motion/interaction rules
 - **Frontend list table**: reordered to 商品·品牌·容量·庫存·效期·備註·開封;
   expiration is now plain text with a calendar glyph (no colored badge)
