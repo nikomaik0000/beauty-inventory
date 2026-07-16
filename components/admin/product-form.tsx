@@ -173,7 +173,10 @@ export function ProductForm({
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div>
-          <Label htmlFor="expiration_type">截止日期類型</Label>
+          <Label htmlFor="expiration_type">
+            <span className="sm:hidden">截止類型</span>
+            <span className="hidden sm:inline">截止日期類型</span>
+          </Label>
           <Select id="expiration_type" {...register("expiration_type")}>
             <option value="dated">有截止日期</option>
             <option value="none">無期限</option>

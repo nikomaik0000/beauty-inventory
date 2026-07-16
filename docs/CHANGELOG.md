@@ -1,5 +1,54 @@
 # Changelog
 
+## Phase 5B — Admin mobile polish (title, CSV menu, filter badge)
+- **Scope note**: this phase's brief (title typography, CSV dropdown,
+  filter badge, button sizing) targeted the same page as Phase 5A but
+  is a distinct set of changes from what "Phase 5A" already covered
+  (bottom spacing, 4-up CSV grid, form stacking, sticky save bar) —
+  named 5B rather than merged into 5A to avoid rewriting an already-
+  shipped changelog entry.
+- Item 5 (icons on the mobile 商品表格 row: 📅/📏/📦) and item 10 (keep
+  that row unchanged) directly contradicted each other in this phase's
+  brief; per confirmation, item 10 wins — the mobile row in
+  `components/admin/product-table.tsx` is untouched.
+- **Title/count header** (`components/admin/admin-product-manager.tsx`):
+  on mobile only, "商品" and "共 X 件" now sit on one baseline-aligned,
+  non-wrapping row — "商品" in `var(--font-serif-cjk)` at 32px, the
+  count in the existing small gray style. Desktop keeps the original
+  stacked `<h1>`/`<p>` exactly as before (duplicated block, toggled via
+  `sm:hidden` / `hidden sm:block`, not a single responsively-restyled
+  element, so desktop markup/behavior is provably unchanged).
+- **Toolbar CSV menu** (`components/admin/data-toolbar.tsx`): mobile
+  now shows 新增 alone on its own full-width row, with 匯入 CSV / 匯出
+  CSV / 下載範例 collapsed into one "匯入 / 匯出 ▼" dropdown trigger below
+  (same open/close/click-outside/Escape pattern as the existing
+  `SortMenu`). Mobile buttons are `h-9` (36px) with tighter padding.
+  Desktop reverts to the original three-secondary-button +
+  `ml-auto`-pinned primary row, byte-for-byte the pre-Phase-5A-4-grid
+  version (the four-up mobile grid from earlier today is fully
+  replaced, not layered on top of).
+- **Filter count badge** (`components/ui/toolbar-button.tsx`): the
+  active-filter count is now a small corner-overlay badge on the
+  filter icon itself (`bg-accentStrong` / white text, fully rounded)
+  instead of an inline gray pill next to the label. Affects every
+  `ToolbarButton` consumer (currently just `FilterPanel`, used on both
+  the admin and public product pages) identically — there was no
+  admin-only variant to branch on.
+- **Bottom safe-area padding**: `app/admin/layout.tsx` and `app/page.tsx`
+  now use `pb-[max(48px,env(safe-area-inset-bottom))]` on mobile so the
+  last card/row never sits flush against the screen edge or an iPhone's
+  home indicator when installed as a PWA. Desktop was already at 48px
+  (`sm:pb-12` / `sm:py-8`) and is untouched.
+- **截止日期類型 label** (`components/admin/product-form.tsx`): shortened
+  to "截止類型" on mobile only (desktop keeps the full "截止日期類型");
+  the input itself was already un-squeezed by Phase 5A's `grid-cols-1
+  sm:grid-cols-2` stacking, this only shortens the label text.
+- **Header order**: audited against the requested 商品→新增商品→CSV工具
+  →搜尋→商品卡 reading order — `AdminProductManager` already renders in
+  that order, no change needed.
+- Search bar, filter/sort/CRUD logic, CSV import/export behavior, and
+  image handling are all unchanged — UI only.
+
 ## Phase 5A — Mobile UX polish & responsive refinement
 - **Global bottom spacing** (`app/admin/layout.tsx`): the shared admin
   `<main>` shell now has `pb-10` (mobile) / `pb-12` (desktop, was
@@ -31,6 +80,22 @@
 - **Docs**: resolved leftover unmerged Git conflict markers in this
   file (Phase 4E / 4E.1 entries were already correct on one side of
   the conflict; no content was changed, only the markers removed).
+- **Refinement pass** (same phase, after initial review):
+  - Header row (`admin-product-manager.tsx`) now stacks vertically on
+    mobile (`flex-col`) — title row, then the toolbar row directly
+    below — instead of `flex-wrap`, which on narrow screens could sit
+    the toolbar beside the title rather than under it depending on
+    content width. Desktop reverts to the original side-by-side row
+    (`sm:flex-row sm:justify-between`), unchanged.
+  - Mobile toolbar block (`data-toolbar.tsx`) now spans the full row
+    width (`w-full`) as a flex item in that stacked header, so it reads
+    as a clear tier below the title instead of shrink-wrapping to its
+    content width.
+  - Mobile CSV dropdown (`data-toolbar.tsx`) restyled to a subtle
+    iOS-style popover: semi-transparent white background
+    (`bg-surface/75`), backdrop blur + saturation, softer shadow, and
+    larger rounded corners (`rounded-2xl`) — replacing the previous flat
+    opaque dropdown. No dark page overlay was added or existed before.
 - No database, CSV, image-upload, or business-logic changes.
 
 ## Phase 4E.1 — UI polish follow-up

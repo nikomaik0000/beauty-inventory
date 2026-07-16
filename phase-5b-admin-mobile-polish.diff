@@ -1,0 +1,387 @@
+diff --git a/app/admin/layout.tsx b/app/admin/layout.tsx
+index 8e34d38..b957ca2 100644
+--- a/app/admin/layout.tsx
++++ b/app/admin/layout.tsx
+@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
+   return (
+     <div className="min-h-screen bg-background">
+       <SiteHeader />
+-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 overflow-x-hidden px-4 pb-10 pt-4 sm:flex-row sm:gap-6 sm:px-6 sm:pb-12 sm:pt-8">
++      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 overflow-x-hidden px-4 pb-[max(48px,env(safe-area-inset-bottom))] pt-4 sm:flex-row sm:gap-6 sm:px-6 sm:pb-12 sm:pt-8">
+         <AdminSidebar />
+         <div className="min-w-0 flex-1">{children}</div>
+       </main>
+diff --git a/app/page.tsx b/app/page.tsx
+index f1db788..2c4113e 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -16,7 +16,7 @@ export default async function HomePage() {
+   return (
+     <div className="min-h-screen bg-background">
+       <SiteHeader />
+-      <main className="mx-auto w-full max-w-5xl overflow-x-hidden px-4 py-7 sm:px-6 sm:py-8">
++      <main className="mx-auto w-full max-w-5xl overflow-x-hidden px-4 pb-[max(48px,env(safe-area-inset-bottom))] pt-7 sm:px-6 sm:py-8">
+         <ProductExplorer
+           products={products}
+           categories={categories}
+diff --git a/components/admin/admin-product-manager.tsx b/components/admin/admin-product-manager.tsx
+index 0bff9d3..fab7917 100644
+--- a/components/admin/admin-product-manager.tsx
++++ b/components/admin/admin-product-manager.tsx
+@@ -49,12 +49,28 @@ export function AdminProductManager({
+ 
+   return (
+     <div>
+-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
++      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+         <div>
+-          <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
+-          <p className="text-sm text-textMuted">
+-            共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
+-          </p>
++          {/* Mobile: single baseline-aligned row — CJK serif "商品" at
++              ~32px next to a smaller gray count, no wrap. Desktop keeps
++              the original stacked h1/p untouched below. */}
++          <div className="flex items-baseline gap-2 whitespace-nowrap sm:hidden">
++            <h1
++              className="text-[32px] font-semibold leading-none text-textPrimary"
++              style={{ fontFamily: "var(--font-serif-cjk)" }}
++            >
++              商品
++            </h1>
++            <p className="text-sm text-textMuted">
++              共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
++            </p>
++          </div>
++          <div className="hidden sm:block">
++            <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
++            <p className="text-sm text-textMuted">
++              共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
++            </p>
++          </div>
+         </div>
+         {/* Export scopes to `filtered` (all products when no filters are
+             active); import always matches against the full `products`
+diff --git a/components/admin/data-toolbar.tsx b/components/admin/data-toolbar.tsx
+index b4245a1..83aa4ff 100644
+--- a/components/admin/data-toolbar.tsx
++++ b/components/admin/data-toolbar.tsx
+@@ -1,12 +1,15 @@
+ "use client";
+ 
+-import { useState } from "react";
++import { useEffect, useRef, useState } from "react";
+ import Link from "next/link";
+-import { Download, FileDown, Plus, Upload } from "lucide-react";
++import { ChevronDown, Download, FileDown, Plus, Upload } from "lucide-react";
++import { AnimatePresence, motion } from "framer-motion";
+ import { Button } from "@/components/ui/button";
+ import { CsvImportDialog } from "@/components/admin/csv-import-dialog";
+ import { buildProductCsv, downloadCsv, todayDateStamp } from "@/lib/csv";
+ import { productToCsvRow } from "@/lib/csv-import";
++import { cn } from "@/lib/utils";
++import { animation } from "@/lib/design-system";
+ import type { Category, ProductWithRelations } from "@/lib/types";
+ 
+ const SAMPLE_CSV_ROW = [
+@@ -30,6 +33,24 @@ export function DataToolbar({
+   categories: Category[];
+ }) {
+   const [importOpen, setImportOpen] = useState(false);
++  const [csvMenuOpen, setCsvMenuOpen] = useState(false);
++  const csvMenuRef = useRef<HTMLDivElement>(null);
++
++  useEffect(() => {
++    if (!csvMenuOpen) return;
++    function handlePointerDown(e: MouseEvent) {
++      if (csvMenuRef.current && !csvMenuRef.current.contains(e.target as Node)) setCsvMenuOpen(false);
++    }
++    function handleKeyDown(e: KeyboardEvent) {
++      if (e.key === "Escape") setCsvMenuOpen(false);
++    }
++    window.addEventListener("mousedown", handlePointerDown);
++    window.addEventListener("keydown", handleKeyDown);
++    return () => {
++      window.removeEventListener("mousedown", handlePointerDown);
++      window.removeEventListener("keydown", handleKeyDown);
++    };
++  }, [csvMenuOpen]);
+ 
+   function handleExport() {
+     const csvText = buildProductCsv(visibleProducts.map(productToCsvRow));
+@@ -43,56 +64,107 @@ export function DataToolbar({
+ 
+   return (
+     <>
+-      {/* Mobile: one equal-width 4-up row (grid) so the primary action
+-          never wraps to its own line. Desktop (sm:+): back to the
+-          original wrapping flex row with `ml-auto` pinning 新增商品 to
+-          the far right — completely unchanged from before. Each button
+-          carries two label spans, swapped by breakpoint, so the mobile
+-          row gets short labels (匯入/匯出/範例/新增) without touching
+-          the desktop copy (匯入 CSV/匯出 CSV/下載範例/新增商品). */}
+-      <div className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+-        <Button
+-          size="sm"
+-          variant="secondary"
+-          onClick={() => setImportOpen(true)}
+-          className="w-full justify-center sm:w-auto"
+-        >
++      {/* Mobile (below sm:): 新增商品 alone on its own full-width row,
++          CSV's three low-frequency actions collapsed into one
++          "匯入 / 匯出 ▼" dropdown trigger on the row below — instead of
++          four buttons competing for space. Buttons are 36px tall
++          (h-9), slightly tighter horizontal padding, closer to native
++          iOS toolbar sizing. Desktop (sm:+) is completely untouched:
++          the original wrapping flex row, full labels, three separate
++          secondary buttons, and `ml-auto`-pinned primary button. */}
++      <div className="flex w-full flex-col gap-2 sm:hidden">
++        <Link href="/admin/products/new" className="w-full">
++          <Button className="h-9 w-full justify-center px-3">
++            <Plus size={14} strokeWidth={1.75} />
++            新增
++          </Button>
++        </Link>
++
++        <div ref={csvMenuRef} className="relative">
++          <button
++            type="button"
++            onClick={() => setCsvMenuOpen((v) => !v)}
++            aria-haspopup="menu"
++            aria-expanded={csvMenuOpen}
++            className={cn(
++              "flex h-9 w-full items-center justify-center gap-1.5 rounded-button border border-border bg-surface px-3 text-sm font-medium text-textPrimary transition-colors duration-base hover:bg-surfaceMuted",
++              csvMenuOpen && "border-accent text-accentStrong",
++            )}
++          >
++            匯入 / 匯出
++            <ChevronDown size={14} strokeWidth={1.75} className={cn("transition-transform duration-base", csvMenuOpen && "rotate-180")} />
++          </button>
++
++          <AnimatePresence>
++            {csvMenuOpen && (
++              <motion.div
++                role="menu"
++                initial={{ opacity: 0 }}
++                animate={{ opacity: 1 }}
++                exit={{ opacity: 0 }}
++                transition={{ duration: animation.motion.fast, ease: animation.motion.ease }}
++                className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/60 bg-surface/75 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl backdrop-saturate-150"
++              >
++                <button
++                  type="button"
++                  role="menuitem"
++                  onClick={() => {
++                    setCsvMenuOpen(false);
++                    setImportOpen(true);
++                  }}
++                  className="flex w-full items-center gap-2 rounded-input px-2.5 py-2 text-left text-sm text-textPrimary transition-colors duration-fast hover:bg-surfaceMuted"
++                >
++                  <Upload size={14} strokeWidth={1.75} />
++                  匯入 CSV
++                </button>
++                <button
++                  type="button"
++                  role="menuitem"
++                  onClick={() => {
++                    setCsvMenuOpen(false);
++                    handleExport();
++                  }}
++                  className="flex w-full items-center gap-2 rounded-input px-2.5 py-2 text-left text-sm text-textPrimary transition-colors duration-fast hover:bg-surfaceMuted"
++                >
++                  <FileDown size={14} strokeWidth={1.75} />
++                  匯出 CSV
++                </button>
++                <button
++                  type="button"
++                  role="menuitem"
++                  onClick={() => {
++                    setCsvMenuOpen(false);
++                    handleDownloadSample();
++                  }}
++                  className="flex w-full items-center gap-2 rounded-input px-2.5 py-2 text-left text-sm text-textPrimary transition-colors duration-fast hover:bg-surfaceMuted"
++                >
++                  <Download size={14} strokeWidth={1.75} />
++                  下載範例
++                </button>
++              </motion.div>
++            )}
++          </AnimatePresence>
++        </div>
++      </div>
++
++      {/* Desktop (sm:+): original, unmodified three-button + primary row. */}
++      <div className="hidden sm:flex sm:flex-wrap sm:items-center sm:gap-3">
++        <Button size="sm" variant="secondary" onClick={() => setImportOpen(true)}>
+           <Upload size={14} strokeWidth={1.75} />
+-          <span className="sm:hidden">匯入</span>
+-          <span className="hidden sm:inline">匯入 CSV</span>
++          匯入 CSV
+         </Button>
+-        <Button
+-          size="sm"
+-          variant="secondary"
+-          onClick={handleExport}
+-          className="w-full justify-center sm:w-auto"
+-        >
++        <Button size="sm" variant="secondary" onClick={handleExport}>
+           <FileDown size={14} strokeWidth={1.75} />
+-          <span className="sm:hidden">匯出</span>
+-          <span className="hidden sm:inline">匯出 CSV</span>
++          匯出 CSV
+         </Button>
+-        <Button
+-          size="sm"
+-          variant="secondary"
+-          onClick={handleDownloadSample}
+-          className="w-full justify-center sm:w-auto"
+-        >
++        <Button size="sm" variant="secondary" onClick={handleDownloadSample}>
+           <Download size={14} strokeWidth={1.75} />
+-          <span className="sm:hidden">範例</span>
+-          <span className="hidden sm:inline">下載範例</span>
++          下載範例
+         </Button>
+-        {/* Primary action stays visually emphasized (filled `Button`
+-            default variant). `ml-auto` pins it to the far right of this
+-            row on its own — no order-* juggling, and it keeps working
+-            correctly if this row's container ever grows wider (e.g. a
+-            future full-width toolbar) since it's real flex spacing, not
+-            just a fixed visual position. On mobile it's simply the 4th
+-            grid cell, so `ml-auto` is scoped to `sm:` only. */}
+-        <Link href="/admin/products/new" className="w-full sm:ml-auto sm:w-auto">
+-          <Button size="sm" className="w-full justify-center sm:w-auto">
++        <Link href="/admin/products/new" className="ml-auto">
++          <Button size="sm">
+             <Plus size={14} strokeWidth={1.75} />
+-            <span className="sm:hidden">新增</span>
+-            <span className="hidden sm:inline">新增商品</span>
++            新增商品
+           </Button>
+         </Link>
+       </div>
+diff --git a/components/admin/product-form.tsx b/components/admin/product-form.tsx
+index f8fd4a6..219cb20 100644
+--- a/components/admin/product-form.tsx
++++ b/components/admin/product-form.tsx
+@@ -173,7 +173,10 @@ export function ProductForm({
+ 
+       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+         <div>
+-          <Label htmlFor="expiration_type">截止日期類型</Label>
++          <Label htmlFor="expiration_type">
++            <span className="sm:hidden">截止類型</span>
++            <span className="hidden sm:inline">截止日期類型</span>
++          </Label>
+           <Select id="expiration_type" {...register("expiration_type")}>
+             <option value="dated">有截止日期</option>
+             <option value="none">無期限</option>
+diff --git a/components/ui/toolbar-button.tsx b/components/ui/toolbar-button.tsx
+index 90af145..c370e18 100644
+--- a/components/ui/toolbar-button.tsx
++++ b/components/ui/toolbar-button.tsx
+@@ -26,7 +26,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
+         ref={ref}
+         type="button"
+         className={cn(
+-          "flex h-10 shrink-0 items-center gap-2 rounded-input border border-border bg-surface text-sm font-medium text-textSecondary transition-colors duration-base hover:bg-surfaceMuted",
++          "relative flex h-10 shrink-0 items-center gap-2 rounded-input border border-border bg-surface text-sm font-medium text-textSecondary transition-colors duration-base hover:bg-surfaceMuted",
+           label ? "px-3.5" : "w-10 justify-center",
+           active && "border-accent text-accentStrong",
+           className,
+@@ -35,8 +35,12 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
+       >
+         <Icon size={20} strokeWidth={1.75} />
+         {label && <span className="hidden sm:inline">{label}</span>}
++        {/* Small corner-overlay count badge on the icon itself (brown
++            bg / white text, per spec), positioned absolutely against
++            the button so it reads as sitting on the icon's top-right
++            corner regardless of whether a label is also showing. */}
+         {!!badgeCount && badgeCount > 0 && (
+-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-filterCountBadgeBg text-[11px] font-semibold text-textPrimary">
++          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accentStrong px-1 text-[10px] font-semibold leading-none text-surface">
+             {badgeCount}
+           </span>
+         )}
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 1abf7a6..962d698 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -1,5 +1,54 @@
+ # Changelog
+ 
++## Phase 5B — Admin mobile polish (title, CSV menu, filter badge)
++- **Scope note**: this phase's brief (title typography, CSV dropdown,
++  filter badge, button sizing) targeted the same page as Phase 5A but
++  is a distinct set of changes from what "Phase 5A" already covered
++  (bottom spacing, 4-up CSV grid, form stacking, sticky save bar) —
++  named 5B rather than merged into 5A to avoid rewriting an already-
++  shipped changelog entry.
++- Item 5 (icons on the mobile 商品表格 row: 📅/📏/📦) and item 10 (keep
++  that row unchanged) directly contradicted each other in this phase's
++  brief; per confirmation, item 10 wins — the mobile row in
++  `components/admin/product-table.tsx` is untouched.
++- **Title/count header** (`components/admin/admin-product-manager.tsx`):
++  on mobile only, "商品" and "共 X 件" now sit on one baseline-aligned,
++  non-wrapping row — "商品" in `var(--font-serif-cjk)` at 32px, the
++  count in the existing small gray style. Desktop keeps the original
++  stacked `<h1>`/`<p>` exactly as before (duplicated block, toggled via
++  `sm:hidden` / `hidden sm:block`, not a single responsively-restyled
++  element, so desktop markup/behavior is provably unchanged).
++- **Toolbar CSV menu** (`components/admin/data-toolbar.tsx`): mobile
++  now shows 新增 alone on its own full-width row, with 匯入 CSV / 匯出
++  CSV / 下載範例 collapsed into one "匯入 / 匯出 ▼" dropdown trigger below
++  (same open/close/click-outside/Escape pattern as the existing
++  `SortMenu`). Mobile buttons are `h-9` (36px) with tighter padding.
++  Desktop reverts to the original three-secondary-button +
++  `ml-auto`-pinned primary row, byte-for-byte the pre-Phase-5A-4-grid
++  version (the four-up mobile grid from earlier today is fully
++  replaced, not layered on top of).
++- **Filter count badge** (`components/ui/toolbar-button.tsx`): the
++  active-filter count is now a small corner-overlay badge on the
++  filter icon itself (`bg-accentStrong` / white text, fully rounded)
++  instead of an inline gray pill next to the label. Affects every
++  `ToolbarButton` consumer (currently just `FilterPanel`, used on both
++  the admin and public product pages) identically — there was no
++  admin-only variant to branch on.
++- **Bottom safe-area padding**: `app/admin/layout.tsx` and `app/page.tsx`
++  now use `pb-[max(48px,env(safe-area-inset-bottom))]` on mobile so the
++  last card/row never sits flush against the screen edge or an iPhone's
++  home indicator when installed as a PWA. Desktop was already at 48px
++  (`sm:pb-12` / `sm:py-8`) and is untouched.
++- **截止日期類型 label** (`components/admin/product-form.tsx`): shortened
++  to "截止類型" on mobile only (desktop keeps the full "截止日期類型");
++  the input itself was already un-squeezed by Phase 5A's `grid-cols-1
++  sm:grid-cols-2` stacking, this only shortens the label text.
++- **Header order**: audited against the requested 商品→新增商品→CSV工具
++  →搜尋→商品卡 reading order — `AdminProductManager` already renders in
++  that order, no change needed.
++- Search bar, filter/sort/CRUD logic, CSV import/export behavior, and
++  image handling are all unchanged — UI only.
++
+ ## Phase 5A — Mobile UX polish & responsive refinement
+ - **Global bottom spacing** (`app/admin/layout.tsx`): the shared admin
+   `<main>` shell now has `pb-10` (mobile) / `pb-12` (desktop, was
+@@ -31,6 +80,22 @@
+ - **Docs**: resolved leftover unmerged Git conflict markers in this
+   file (Phase 4E / 4E.1 entries were already correct on one side of
+   the conflict; no content was changed, only the markers removed).
++- **Refinement pass** (same phase, after initial review):
++  - Header row (`admin-product-manager.tsx`) now stacks vertically on
++    mobile (`flex-col`) — title row, then the toolbar row directly
++    below — instead of `flex-wrap`, which on narrow screens could sit
++    the toolbar beside the title rather than under it depending on
++    content width. Desktop reverts to the original side-by-side row
++    (`sm:flex-row sm:justify-between`), unchanged.
++  - Mobile toolbar block (`data-toolbar.tsx`) now spans the full row
++    width (`w-full`) as a flex item in that stacked header, so it reads
++    as a clear tier below the title instead of shrink-wrapping to its
++    content width.
++  - Mobile CSV dropdown (`data-toolbar.tsx`) restyled to a subtle
++    iOS-style popover: semi-transparent white background
++    (`bg-surface/75`), backdrop blur + saturation, softer shadow, and
++    larger rounded corners (`rounded-2xl`) — replacing the previous flat
++    opaque dropdown. No dark page overlay was added or existed before.
+ - No database, CSV, image-upload, or business-logic changes.
+ 
+ ## Phase 4E.1 — UI polish follow-up

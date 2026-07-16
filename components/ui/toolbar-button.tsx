@@ -26,7 +26,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
         ref={ref}
         type="button"
         className={cn(
-          "flex h-10 shrink-0 items-center gap-2 rounded-input border border-border bg-surface text-sm font-medium text-textSecondary transition-colors duration-base hover:bg-surfaceMuted",
+          "relative flex h-10 shrink-0 items-center gap-2 rounded-input border border-border bg-surface text-sm font-medium text-textSecondary transition-colors duration-base hover:bg-surfaceMuted",
           label ? "px-3.5" : "w-10 justify-center",
           active && "border-accent text-accentStrong",
           className,
@@ -35,8 +35,12 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
       >
         <Icon size={20} strokeWidth={1.75} />
         {label && <span className="hidden sm:inline">{label}</span>}
+        {/* Small corner-overlay count badge on the icon itself (brown
+            bg / white text, per spec), positioned absolutely against
+            the button so it reads as sitting on the icon's top-right
+            corner regardless of whether a label is also showing. */}
         {!!badgeCount && badgeCount > 0 && (
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-filterCountBadgeBg text-[11px] font-semibold text-textPrimary">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accentStrong px-1 text-[10px] font-semibold leading-none text-surface">
             {badgeCount}
           </span>
         )}

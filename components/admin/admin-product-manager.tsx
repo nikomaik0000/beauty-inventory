@@ -49,12 +49,28 @@ export function AdminProductManager({
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
-          <p className="text-sm text-textMuted">
-            共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
-          </p>
+          {/* Mobile: single baseline-aligned row — CJK serif "商品" at
+              ~32px next to a smaller gray count, no wrap. Desktop keeps
+              the original stacked h1/p untouched below. */}
+          <div className="flex items-baseline gap-2 whitespace-nowrap sm:hidden">
+            <h1
+              className="text-[32px] font-semibold leading-none text-textPrimary"
+              style={{ fontFamily: "var(--font-serif-cjk)" }}
+            >
+              商品
+            </h1>
+            <p className="text-sm text-textMuted">
+              共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
+            </p>
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
+            <p className="text-sm text-textMuted">
+              共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
+            </p>
+          </div>
         </div>
         {/* Export scopes to `filtered` (all products when no filters are
             active); import always matches against the full `products`
