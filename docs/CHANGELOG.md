@@ -1,7 +1,38 @@
 # Changelog
 
-<<<<<<< HEAD
-=======
+## Phase 5A — Mobile UX polish & responsive refinement
+- **Global bottom spacing** (`app/admin/layout.tsx`): the shared admin
+  `<main>` shell now has `pb-10` (mobile) / `pb-12` (desktop, was
+  `sm:py-8`) instead of symmetric top/bottom padding. Covers 商品·分類·
+  品牌·設定·新增商品·編輯商品 in one place since they all render inside
+  this layout — no per-page changes needed.
+- **Mobile toolbar redesign** (`components/admin/data-toolbar.tsx`):
+  below `sm:`, the four admin toolbar buttons (匯入 CSV/匯出 CSV/下載
+  範例/新增商品) now sit in one `grid grid-cols-4` row instead of
+  wrapping onto a second line, with short labels (匯入/匯出/範例/新增)
+  swapped in via `sm:hidden` / `hidden sm:inline` spans. Desktop keeps
+  the original wrapping flex row, full labels, and `ml-auto`-pinned
+  primary button untouched.
+- **Responsive form layout** (`components/admin/product-form.tsx`):
+  the three two-column field pairs (品牌/庫存, 大分類/小分類, 截止日期
+  類型/截止日期) are now `grid-cols-1 sm:grid-cols-2` — they stack on
+  mobile instead of squeezing, so the date input always shows in full
+  with no font-size reduction. Desktop layout unchanged.
+- **Sticky mobile save bar** (`components/admin/product-form.tsx`): on
+  mobile, 儲存變更/取消 are now `fixed inset-x-0 bottom-0` (not
+  `sticky`, so they're edge-to-edge regardless of the form's own
+  `max-w-xl` ancestor) with a `env(safe-area-inset-bottom)`-aware
+  bottom inset for the iPhone home indicator, and split evenly via
+  `flex-1`. The form gained `pb-24` on mobile so the fixed bar never
+  covers the notes field. Desktop (`sm:`) reverts to the original
+  static, unstyled row. Requires `viewportFit: "cover"` in
+  `app/layout.tsx`'s `viewport` export, added here, or
+  `env(safe-area-inset-bottom)` resolves to `0` on iOS.
+- **Docs**: resolved leftover unmerged Git conflict markers in this
+  file (Phase 4E / 4E.1 entries were already correct on one side of
+  the conflict; no content was changed, only the markers removed).
+- No database, CSV, image-upload, or business-logic changes.
+
 ## Phase 4E.1 — UI polish follow-up
 - **Toolbar layout** (`components/admin/data-toolbar.tsx`): replaced
   `order-first sm:order-last` with `ml-auto` on 新增商品 — same visual
@@ -71,7 +102,6 @@
   button hierarchy (新增商品 filled, the CSV actions outlined) was
   already in place from Phase 01 and needed no change.
 
->>>>>>> beauty-inventory-full
 ## Data Management — CSV import / export
 - Added four toolbar buttons on `/admin` beside 新增商品: 匯入 CSV, 匯出
   CSV, 下載範例 — same toolbar/button style, no other UI changes.

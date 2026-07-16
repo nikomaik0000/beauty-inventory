@@ -89,7 +89,7 @@ export function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-24 sm:pb-0">
       {serverError && (
         <div className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
           {serverError}
@@ -111,7 +111,7 @@ export function ProductForm({
         <FieldError message={errors.name?.message} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div>
           <Label htmlFor="brand_name">品牌</Label>
           <Input id="brand_name" {...register("brand_name")} placeholder="例如：SK-II" />
@@ -122,7 +122,7 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div>
           <Label htmlFor="category_id">大分類</Label>
           <Controller
@@ -171,7 +171,7 @@ export function ProductForm({
         <p className="mt-1 text-[11px] text-textMuted">僅需輸入數字，不含單位。</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <div>
           <Label htmlFor="expiration_type">截止日期類型</Label>
           <Select id="expiration_type" {...register("expiration_type")}>
@@ -213,11 +213,23 @@ export function ProductForm({
         <Textarea id="notes" {...register("notes")} placeholder="任何值得記錄的小筆記…" />
       </div>
 
-      <div className="flex items-center gap-2.5 pt-2">
-        <Button type="submit" disabled={pending}>
+      {/* Mobile: fixed to the viewport bottom (not `sticky`, so it's
+          edge-to-edge regardless of this form's own max-width/padding
+          ancestors) with a safe-area-aware bottom inset for iPhone home
+          indicators. Desktop (sm:+) reverts to the original static
+          inline row — no border, no background, no fixed positioning. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-2"
+      >
+        <Button type="submit" disabled={pending} className="flex-1 justify-center sm:flex-none">
           {pending ? "儲存中…" : product ? "儲存變更" : "新增商品"}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => router.push("/admin")}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => router.push("/admin")}
+          className="flex-1 justify-center sm:flex-none"
+        >
           取消
         </Button>
       </div>
