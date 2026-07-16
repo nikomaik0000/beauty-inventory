@@ -1,5 +1,20 @@
 # Changelog
 
+## Phase 5C — Typography consistency (page titles → CJK serif)
+- Follow-up on Phase 5B, typography only. All static page titles now
+  use `var(--font-serif-cjk)` (the same CJK serif already used by the
+  mobile "商品" title and the "Beauty Inventory" wordmark) instead of
+  `font-serif` (Fraunces — a Latin-only face that silently falls back
+  to the system sans for CJK text, so these titles were never actually
+  rendering serif before).
+- Changed: 商品 (admin desktop title — mobile already correct), 分類,
+  品牌, 設定, 新增商品, 編輯商品, and the shared `Dialog` component's
+  title (covers 匯入 CSV, 篩選, and any future dialog).
+- Explicitly NOT changed: per-category/brand names, product names,
+  form labels, buttons, inputs, search placeholder, product cards, and
+  table content — all untouched, exactly as scoped.
+- No layout, spacing, or functional changes of any kind.
+
 ## Phase 5B — Admin mobile polish (title, CSV menu, filter badge)
 - **Scope note**: this phase's brief (title typography, CSV dropdown,
   filter badge, button sizing) targeted the same page as Phase 5A but

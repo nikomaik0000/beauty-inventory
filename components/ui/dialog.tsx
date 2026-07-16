@@ -76,7 +76,9 @@ export function Dialog({
             )}
           >
             <div className="flex items-center justify-between border-b border-divider px-5 py-4">
-              <h3 className="text-sm font-semibold text-textPrimary">{title}</h3>
+              <h3 className="text-sm font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>
+                {title}
+              </h3>
               <button
                 type="button"
                 onClick={onClose}

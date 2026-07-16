@@ -16,7 +16,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   return (
     <div className="max-w-xl">
-      <h1 className="mb-6 font-serif text-xl font-semibold text-textPrimary">編輯商品</h1>
+      <h1 className="mb-6 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>編輯商品</h1>
       <ProductForm categories={categories} subcategories={subcategories} product={product} />
     </div>
   );

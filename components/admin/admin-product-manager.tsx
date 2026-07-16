@@ -56,7 +56,7 @@ export function AdminProductManager({
               the original stacked h1/p untouched below. */}
           <div className="flex items-baseline gap-2 whitespace-nowrap sm:hidden">
             <h1
-              className="text-[32px] font-semibold leading-none text-textPrimary"
+              className="text-[26px] font-semibold leading-none text-textPrimary"
               style={{ fontFamily: "var(--font-serif-cjk)" }}
             >
               商品
@@ -66,7 +66,7 @@ export function AdminProductManager({
             </p>
           </div>
           <div className="hidden sm:block">
-            <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
+            <h1 className="text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>商品</h1>
             <p className="text-sm text-textMuted">
               共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
             </p>

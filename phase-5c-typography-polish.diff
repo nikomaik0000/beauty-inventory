@@ -1,0 +1,118 @@
+diff --git a/app/admin/brands/page.tsx b/app/admin/brands/page.tsx
+index da62331..4ade253 100644
+--- a/app/admin/brands/page.tsx
++++ b/app/admin/brands/page.tsx
+@@ -23,7 +23,7 @@ export default function BrandsAdminPage() {
+ 
+   return (
+     <div className="max-w-lg">
+-      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">品牌</h1>
++      <h1 className="mb-1 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>品牌</h1>
+       <p className="mb-6 text-sm text-textMuted">
+         在商品上輸入品牌名稱時會自動建立。您可以在這裡重新命名或清理清單。
+       </p>
+diff --git a/app/admin/categories/page.tsx b/app/admin/categories/page.tsx
+index 1aa0296..829e8fc 100644
+--- a/app/admin/categories/page.tsx
++++ b/app/admin/categories/page.tsx
+@@ -67,7 +67,7 @@ export default function CategoriesAdminPage() {
+ 
+   return (
+     <div className="max-w-2xl">
+-      <h1 className="mb-1 font-serif text-xl font-semibold text-textPrimary">分類</h1>
++      <h1 className="mb-1 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>分類</h1>
+       <p className="mb-6 text-sm text-textMuted">
+         大分類與小分類完全自訂 — 依您的收藏需求新增任意數量。
+       </p>
+diff --git a/app/admin/products/[id]/edit/page.tsx b/app/admin/products/[id]/edit/page.tsx
+index a060b4e..bb5324b 100644
+--- a/app/admin/products/[id]/edit/page.tsx
++++ b/app/admin/products/[id]/edit/page.tsx
+@@ -16,7 +16,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
+ 
+   return (
+     <div className="max-w-xl">
+-      <h1 className="mb-6 font-serif text-xl font-semibold text-textPrimary">編輯商品</h1>
++      <h1 className="mb-6 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>編輯商品</h1>
+       <ProductForm categories={categories} subcategories={subcategories} product={product} />
+     </div>
+   );
+diff --git a/app/admin/products/new/page.tsx b/app/admin/products/new/page.tsx
+index cf94aad..c60df15 100644
+--- a/app/admin/products/new/page.tsx
++++ b/app/admin/products/new/page.tsx
+@@ -8,7 +8,7 @@ export default async function NewProductPage() {
+ 
+   return (
+     <div className="max-w-xl">
+-      <h1 className="mb-6 font-serif text-xl font-semibold text-textPrimary">新增商品</h1>
++      <h1 className="mb-6 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>新增商品</h1>
+       <ProductForm categories={categories} subcategories={subcategories} />
+     </div>
+   );
+diff --git a/app/admin/settings/page.tsx b/app/admin/settings/page.tsx
+index 5b3a934..f740c26 100644
+--- a/app/admin/settings/page.tsx
++++ b/app/admin/settings/page.tsx
+@@ -6,7 +6,7 @@ export default function SettingsPage() {
+   return (
+     <div className="max-w-lg space-y-6">
+       <div>
+-        <h1 className="font-serif text-xl font-semibold text-textPrimary">設定</h1>
++        <h1 className="text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>設定</h1>
+         <p className="mt-1 text-sm text-textMuted">帳號與儲存空間管理。</p>
+       </div>
+ 
+diff --git a/components/admin/admin-product-manager.tsx b/components/admin/admin-product-manager.tsx
+index fab7917..1bd441c 100644
+--- a/components/admin/admin-product-manager.tsx
++++ b/components/admin/admin-product-manager.tsx
+@@ -66,7 +66,7 @@ export function AdminProductManager({
+             </p>
+           </div>
+           <div className="hidden sm:block">
+-            <h1 className="font-serif text-xl font-semibold text-textPrimary">商品</h1>
++            <h1 className="text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>商品</h1>
+             <p className="text-sm text-textMuted">
+               共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
+             </p>
+diff --git a/components/ui/dialog.tsx b/components/ui/dialog.tsx
+index 22a5d9f..b054c76 100644
+--- a/components/ui/dialog.tsx
++++ b/components/ui/dialog.tsx
+@@ -76,7 +76,9 @@ export function Dialog({
+             )}
+           >
+             <div className="flex items-center justify-between border-b border-divider px-5 py-4">
+-              <h3 className="text-sm font-semibold text-textPrimary">{title}</h3>
++              <h3 className="text-sm font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>
++                {title}
++              </h3>
+               <button
+                 type="button"
+                 onClick={onClose}
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 962d698..117d56f 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -1,5 +1,20 @@
+ # Changelog
+ 
++## Phase 5C — Typography consistency (page titles → CJK serif)
++- Follow-up on Phase 5B, typography only. All static page titles now
++  use `var(--font-serif-cjk)` (the same CJK serif already used by the
++  mobile "商品" title and the "Beauty Inventory" wordmark) instead of
++  `font-serif` (Fraunces — a Latin-only face that silently falls back
++  to the system sans for CJK text, so these titles were never actually
++  rendering serif before).
++- Changed: 商品 (admin desktop title — mobile already correct), 分類,
++  品牌, 設定, 新增商品, 編輯商品, and the shared `Dialog` component's
++  title (covers 匯入 CSV, 篩選, and any future dialog).
++- Explicitly NOT changed: per-category/brand names, product names,
++  form labels, buttons, inputs, search placeholder, product cards, and
++  table content — all untouched, exactly as scoped.
++- No layout, spacing, or functional changes of any kind.
++
+ ## Phase 5B — Admin mobile polish (title, CSV menu, filter badge)
+ - **Scope note**: this phase's brief (title typography, CSV dropdown,
+   filter badge, button sizing) targeted the same page as Phase 5A but
