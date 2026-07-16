@@ -6,3 +6,4 @@ out
 *.tsbuildinfo
 public/sw.js
 public/workbox-*.js
+.DS_Store
