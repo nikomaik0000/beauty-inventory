@@ -1,5 +1,66 @@
 # Changelog
 
+## Phase 6A — PWA installation experience
+- **Icons** (`public/icons/`, `public/favicon.ico`): the manifest and
+  `public/icons/README.txt` already referenced `icon-192.png`,
+  `icon-512.png`, and `icon-maskable-512.png`, but none of the actual
+  files existed — only a placeholder README. This alone made the app
+  uninstallable (Chrome/Android's install prompt and Lighthouse's
+  installability check both require the manifest's icons to actually
+  load, not just be declared). Generated real PNGs for all of these
+  plus `apple-touch-icon.png` (180×180) and `favicon-32.png`/
+  `favicon-16.png` (bundled into `favicon.ico`), drawn from the app's
+  own design tokens — accent-soft badge, accent-strong sparkle, same
+  colors as the logo mark in `components/site-header.tsx`. No new
+  colors, no external image assets.
+- **Generator script** (`scripts/generate-pwa-assets.py`): the actual
+  source of every icon/splash PNG above, committed so the icon design
+  can be regenerated or restyled later without needing image-editing
+  tools — plain Pillow script, not part of the Next.js build.
+- **iOS splash screens** (`public/splash/`, `app/layout.tsx`): added 8
+  `apple-touch-startup-image` links (media-query-matched by exact
+  device width/height/DPR) covering iPhone SE through the iPhone 16
+  generation plus one common iPad size, portrait only (manifest already
+  locks `orientation: portrait-primary`). Without these, iOS shows a
+  blank white screen while the installed app loads — Android doesn't
+  need this, it generates its splash screen automatically from the
+  manifest's icon + `background_color`.
+- **Favicon / apple-touch-icon wiring** (`app/layout.tsx`): added
+  `metadata.icons` so the browser tab and iOS home-screen icon actually
+  resolve to the new files above, instead of Next.js's default icon.
+- **Manifest** (`public/manifest.json`): added `"id": "/"` (stable app
+  identity across future icon/name changes, current manifest spec) and
+  `"lang": "zh-Hant"` (matches `<html lang>`). `start_url`,
+  `display: "standalone"`, `theme_color`/`background_color`, and the
+  icons list itself were already correct and are unchanged.
+- **Service worker config** (`next.config.mjs`): `clientsClaim` and
+  `cleanupOutdatedCaches` are next-pwa 5.6.0's defaults already
+  (confirmed in `node_modules/next-pwa/index.js`) — made explicit in
+  config with comments explaining what each does for post-deploy
+  updates, rather than changing any actual behavior. Page/document
+  requests already use the `NetworkFirst` strategy from next-pwa's
+  built-in `runtimeCaching` (`node_modules/next-pwa/cache.js`), and
+  build assets under `/_next/static/**` are content-hashed per deploy —
+  between these three, a new deploy reaches users on their next
+  navigation without a manual cache-bust.
+- **Verified, not changed**: service worker registration already works
+  correctly under the App Router (next-pwa injects `register.js` at the
+  webpack entry level, not via `_app`/`_document`, so it isn't Pages-
+  Router-specific) — confirmed via a successful `[PWA] Auto register
+  service worker` build log with no other next-pwa warnings.
+- **Not verified this phase**: a full `next build` / Lighthouse PWA
+  audit — the sandbox this was built in blocks network access to
+  `fonts.googleapis.com`/`fonts.gstatic.com`, which `next/font` needs
+  at build time, so the production build fails before it ever reaches
+  the PWA/service-worker build step. `tsc --noEmit` and `next lint` are
+  clean. Please run `npm run build` (or `next build`) plus a Lighthouse
+  PWA audit once deployed, or against `next dev` won't work since PWA
+  is disabled in dev (`disable: process.env.NODE_ENV === "development"`
+  — this was already the case before this phase, not something changed
+  here).
+- No UI redesign: no component visuals, colors, or typography touched
+  outside the new icon/splash assets themselves.
+
 ## Phase 5C — Typography consistency (page titles → CJK serif)
 - Follow-up on Phase 5B, typography only. All static page titles now
   use `var(--font-serif-cjk)` (the same CJK serif already used by the

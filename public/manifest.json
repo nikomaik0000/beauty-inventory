@@ -1,8 +1,11 @@
 {
+  "id": "/",
   "name": "Beauty Inventory",
   "short_name": "Beauty Inventory",
   "description": "Personal Skincare Inventory",
+  "lang": "zh-Hant",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FAF8F4",
   "theme_color": "#FAF8F4",
