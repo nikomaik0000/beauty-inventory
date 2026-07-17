@@ -7,3 +7,4 @@ out
 public/sw.js
 public/workbox-*.js
 .DS_Store
+.DS_Store
