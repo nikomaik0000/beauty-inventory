@@ -68,7 +68,7 @@ export function ProductCardGrid({
           )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="flex min-w-0 flex-1  flex-col gap-3">
           {product.brand && <InfoRow label="品牌" value={product.brand.name} />}
 
           <div className="flex items-center gap-2 text-sm leading-relaxed">
@@ -80,7 +80,7 @@ export function ProductCardGrid({
             ) : (
               <span className="w-8 shrink-0" />
             )}
-            <span className="ml-1 flex h-6 min-w-[28px] shrink-0 items-center justify-center rounded-input bg-surfaceMuted px-1.5 text-xs font-medium text-textSecondary">
+            <span className="ml-1 flex h-6  min-w-[22px] text-xs shrink-0 items-center justify-center rounded-input bg-surfaceMuted px-1.5 text-xs font-medium text-textSecondary">
               {product.quantity}
             </span>
           </div>
@@ -96,6 +96,7 @@ export function ProductCardGrid({
           <Calendar size={14} strokeWidth={1.75} />
           <span>{formatExpirationCompact(product)}</span>
         </div>
+        
         <span className="text-textMuted" role="img" aria-label={product.opened ? "已開封" : "未開封"}>
           {product.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} />}
         </span>
