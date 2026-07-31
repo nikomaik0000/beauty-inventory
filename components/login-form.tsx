@@ -28,7 +28,7 @@ export function LoginForm() {
       className="w-full max-w-sm space-y-4 rounded-card border border-border bg-surface p-6 shadow-card"
     >
       <div>
-        <h1 className="font-serif text-lg font-semibold text-textPrimary">後台登入</h1>
+        <h1 className="text-lg font-semibold text-textPrimary">後台登入</h1>
         <p className="mt-1 text-xs text-textMuted">登入以管理商品、分類與品牌。</p>
       </div>
 

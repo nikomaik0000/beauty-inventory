@@ -51,14 +51,11 @@ export function AdminProductManager({
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          {/* Mobile: single baseline-aligned row — CJK serif "商品" at
-              ~32px next to a smaller gray count, no wrap. Desktop keeps
-              the original stacked h1/p untouched below. */}
+          {/* Mobile: single baseline-aligned row — "商品" at ~26px next to
+              a smaller gray count, no wrap. Desktop keeps the original
+              stacked h1/p untouched below. */}
           <div className="flex items-baseline gap-2 whitespace-nowrap sm:hidden">
-            <h1
-              className="text-[26px] font-semibold leading-none text-textPrimary"
-              style={{ fontFamily: "var(--font-serif-cjk)" }}
-            >
+            <h1 className="text-[26px] font-semibold leading-none text-textPrimary">
               商品
             </h1>
             <p className="text-sm text-textMuted">
@@ -66,7 +63,7 @@ export function AdminProductManager({
             </p>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>商品</h1>
+            <h1 className="text-xl font-semibold text-textPrimary">商品</h1>
             <p className="text-sm text-textMuted">
               共 {filtered.length} 件{filtersActive ? `（篩選自 ${products.length} 件）` : ""}
             </p>

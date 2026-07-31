@@ -67,7 +67,7 @@ export default function CategoriesAdminPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="mb-1 text-xl font-semibold text-textPrimary" style={{ fontFamily: "var(--font-serif-cjk)" }}>分類</h1>
+      <h1 className="mb-1 text-xl font-semibold text-textPrimary">分類</h1>
       <p className="mb-6 text-sm text-textMuted">
         大分類與小分類完全自訂 — 依您的收藏需求新增任意數量。
       </p>
@@ -107,7 +107,7 @@ export default function CategoriesAdminPage() {
                 </div>
               ) : (
                 <>
-                  <h2 className="font-serif text-base font-medium text-textPrimary">{category.name}</h2>
+                  <h2 className="text-base font-medium text-textPrimary">{category.name}</h2>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"

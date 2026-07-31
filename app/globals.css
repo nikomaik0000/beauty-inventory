@@ -17,9 +17,17 @@
 
 :root {
   /* Typography */
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: "Fraunces", Georgia, serif;
-  --font-serif-cjk: "Songti SC", "Apple LiSong", "Noto Serif TC", serif;
+  --font-sans:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Microsoft JhengHei",
+    "Noto Sans TC",
+    "PingFang TC",
+    system-ui,
+    Arial,
+    sans-serif;
   --text-heading: 1.25rem;
   --text-heading-line-height: 1.3;
   --text-heading-letter-spacing: -0.01em;

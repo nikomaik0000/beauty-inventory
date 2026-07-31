@@ -39,8 +39,6 @@ export const radius = {
  * `fontSize.{heading,body,small}` keys in tailwind.config.ts. */
 export const typography = {
   fontSans: "var(--font-sans)",
-  fontSerif: "var(--font-serif)",
-  fontSerifCjk: "var(--font-serif-cjk)",
   heading: { size: "1.25rem", weight: 600, lineHeight: 1.3, letterSpacing: "-0.01em" },
   body: { size: "0.875rem", weight: 400, lineHeight: 1.6 },
   small: { size: "0.75rem", weight: 500, lineHeight: 1.5 },

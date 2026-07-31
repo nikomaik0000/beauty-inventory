@@ -34,10 +34,7 @@ export function ProductCardGrid({
 
   return (
     <Card className="flex h-full flex-col p-7">
-      <h3
-        className="truncate text-lg font-medium leading-snug tracking-[0.05em] text-textHeading"
-        style={{ fontFamily: "var(--font-serif-cjk)" }}
-      >
+      <h3 className="truncate text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
         {product.name}
       </h3>
 

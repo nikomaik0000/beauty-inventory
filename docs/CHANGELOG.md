@@ -1,5 +1,27 @@
 # Changelog
 
+## Phase 6B — Windows typography & layout compatibility (follow-up)
+- Removed the CJK/Latin serif typography system entirely: `var(--font-
+  serif-cjk)` and the `font-serif` Tailwind class had bad font metrics
+  on Windows, causing text wrapping/layout shifts. All page titles,
+  dialog titles, table headers, category names, and product-card names
+  that used either now inherit the app's existing sans-serif stack —
+  only the `fontFamily` was touched at every site; size, weight, color,
+  spacing, and content are all unchanged.
+- Made `--font-sans` (`app/globals.css`) an explicit cross-platform
+  stack — `Inter` (already loaded), then `-apple-system`,
+  `BlinkMacSystemFont`, `Segoe UI`, `Microsoft JhengHei`, `Noto Sans
+  TC`, `PingFang TC`, `system-ui`, `Arial`, `sans-serif` — instead of
+  relying on the bare `system-ui` keyword for CJK glyph coverage.
+- Removed now-unused serif infrastructure: the Fraunces `next/font`
+  load and the Google Fonts `Noto Serif TC` stylesheet link (+ its
+  preconnects) in `app/layout.tsx`, the `serif`/`serifCjk` keys in
+  `tailwind.config.ts`, the `fontSerif`/`fontSerifCjk` tokens in
+  `lib/design-system.ts`, and the `--font-serif`/`--font-serif-cjk`
+  variables in `app/globals.css`.
+- No UI redesign: no color, size, weight, spacing, or layout changed
+  outside the font-family swap itself.
+
 ## Phase 6A — PWA installation experience
 - **Icons** (`public/icons/`, `public/favicon.ico`): the manifest and
   `public/icons/README.txt` already referenced `icon-192.png`,

@@ -150,8 +150,6 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
                       ? "justify-center"
                       : "justify-start"
                   }`}
-
-                    style={{ fontFamily: "var(--font-serif-cjk)" }}
                   >
                     {header.isPlaceholder ? null : (
                       <button

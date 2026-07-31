@@ -27,13 +27,13 @@ export function ProductListTable({ products }: { products: ProductWithRelations[
         </colgroup>
         <thead>
           <tr className="h-11 border-b border-divider text-xs font-medium tracking-wide text-textMuted">
-            <th className="truncate px-4 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>商品</th>
-            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>品牌</th>
-            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>容量</th>
-            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>庫存</th>
-            <th className="truncate px-3 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>效期</th>
-            <th className="truncate px-3 font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}>備註</th>
-            <th className="truncate px-4 text-center font-medium" style={{ fontFamily: "var(--font-serif-cjk)" }}></th>
+            <th className="truncate px-4 font-medium">商品</th>
+            <th className="truncate px-3 text-center font-medium">品牌</th>
+            <th className="truncate px-3 text-center font-medium">容量</th>
+            <th className="truncate px-3 text-center font-medium">庫存</th>
+            <th className="truncate px-3 text-center font-medium">效期</th>
+            <th className="truncate px-3 font-medium">備註</th>
+            <th className="truncate px-4 text-center font-medium"></th>
           </tr>
         </thead>
         <tbody>
