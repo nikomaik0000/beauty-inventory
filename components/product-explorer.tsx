@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
@@ -24,6 +24,11 @@ import type {
   ViewMode,
 } from "@/lib/types";
 
+function compareTextStable(left: string, right: string) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
 export function ProductExplorer({
   products,
   categories,
@@ -39,6 +44,23 @@ export function ProductExplorer({
   const [sortField, setSortField] = useLocalStorage<SortField>("beauty-inventory:sort-field", "expiration");
   const [filters, setFilters] = useState<ProductFilters>(defaultFilters);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [openSwipeProductId, setOpenSwipeProductId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openSwipeProductId) return;
+
+    const closeWhenTouchingElsewhere = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const card = target.closest("[data-product-swipe-card]");
+      if (card?.getAttribute("data-product-swipe-card") !== openSwipeProductId) {
+        setOpenSwipeProductId(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeWhenTouchingElsewhere);
+    return () => document.removeEventListener("pointerdown", closeWhenTouchingElsewhere);
+  }, [openSwipeProductId]);
 
   const activeFilterCount =
     (filters.categoryId ? 1 : 0) +
@@ -69,10 +91,10 @@ export function ProductExplorer({
           if (aDated && !bDated) return -1;
           if (!aDated && bDated) return 1;
           if (aDated && bDated) return daysUntil(a.expiration_date!) - daysUntil(b.expiration_date!);
-          return a.name.localeCompare(b.name);
+          return compareTextStable(a.name, b.name);
         }
         case "brand":
-          return (a.brand?.name ?? "\uffff").localeCompare(b.brand?.name ?? "\uffff");
+          return compareTextStable(a.brand?.name ?? "\uffff", b.brand?.name ?? "\uffff");
         case "updated_at":
           return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
         case "quantity":
@@ -154,6 +176,9 @@ export function ProductExplorer({
                 categoryIndex={categoryIndexOf(p.category_id)}
                 onOpen={() => setSelectedProductId(p.id)}
                 onDeleted={() => setSelectedProductId(null)}
+                swipeOpen={openSwipeProductId === p.id}
+                onSwipeOpen={() => setOpenSwipeProductId(p.id)}
+                onSwipeClose={() => setOpenSwipeProductId(null)}
               />
             </motion.div>
           ))}

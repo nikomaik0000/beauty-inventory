@@ -68,9 +68,9 @@ export function ProductActionsMenu({
             disabled={pending}
             aria-label={`${product.name} 操作選單`}
             aria-expanded={open}
-            className="flex h-9 w-9 items-center justify-center rounded-input bg-surface/90 text-textSecondary hover:bg-surfaceMuted disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-input bg-transparent text-textSecondary transition-colors hover:bg-accentSoft focus-visible:bg-accentSoft focus-visible:outline-none disabled:opacity-50"
           >
-            <MoreHorizontal size={20} strokeWidth={1.75} />
+            <MoreHorizontal size={16} strokeWidth={1.75} />
           </button>
         )}
       />

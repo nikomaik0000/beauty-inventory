@@ -2,12 +2,17 @@
 
 import Image from "next/image";
 import { Calendar } from "lucide-react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { ProductActionsMenu } from "@/components/product-actions-menu";
+import { ProductSwipeActions } from "@/components/product-swipe-actions";
 import { protectedProductImageUrl } from "@/lib/product-image-path";
 import { categoryAccent, productImageSize } from "@/lib/theme";
 import { formatCapacity, formatExpirationCompact, initials } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
+
+const SWIPE_ACTION_WIDTH = 192;
+const SWIPE_DIRECTION_THRESHOLD = 8;
 
 /** Plain label/value row — no badge, background, or border. Same
  * font-size/weight for label and value (14px / 500); only color
@@ -30,19 +35,137 @@ export function ProductCardGrid({
   categoryIndex = 0,
   onOpen,
   onDeleted,
+  swipeOpen = false,
+  onSwipeOpen,
+  onSwipeClose,
 }: {
   product: ProductWithRelations;
   categoryIndex?: number;
   onOpen: () => void;
   onDeleted?: () => void;
+  swipeOpen?: boolean;
+  onSwipeOpen?: () => void;
+  onSwipeClose?: () => void;
 }) {
   const capacityText = formatCapacity(product.capacity);
   const imageSrc = protectedProductImageUrl(product.image_url);
+  const [offset, setOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const offsetRef = useRef(0);
+  const touchStartRef = useRef({ x: 0, y: 0, baseOffset: 0 });
+  const directionRef = useRef<"horizontal" | "vertical" | null>(null);
+  const suppressOpenRef = useRef(false);
+  const suppressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function updateOffset(next: number) {
+    offsetRef.current = next;
+    setOffset(next);
+  }
+
+  useEffect(() => {
+    if (dragging) return;
+    updateOffset(swipeOpen ? -SWIPE_ACTION_WIDTH : 0);
+  }, [dragging, swipeOpen]);
+
+  useEffect(
+    () => () => {
+      if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
+    },
+    [],
+  );
+
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    if (window.matchMedia("(min-width: 640px)").matches) return;
+    const touch = event.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      baseOffset: swipeOpen ? -SWIPE_ACTION_WIDTH : 0,
+    };
+    directionRef.current = null;
+    setDragging(false);
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLDivElement>) {
+    if (window.matchMedia("(min-width: 640px)").matches) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (!directionRef.current) {
+      if (Math.max(absX, absY) < SWIPE_DIRECTION_THRESHOLD) return;
+      if (absX > absY * 1.2) directionRef.current = "horizontal";
+      else if (absY > absX * 1.2) directionRef.current = "vertical";
+      else return;
+    }
+
+    if (directionRef.current !== "horizontal") return;
+
+    setDragging(true);
+    suppressOpenRef.current = true;
+    if (deltaX < 0) onSwipeOpen?.();
+    const next = Math.max(
+      -SWIPE_ACTION_WIDTH,
+      Math.min(0, touchStartRef.current.baseOffset + deltaX),
+    );
+    updateOffset(next);
+  }
+
+  function finishTouch() {
+    if (directionRef.current === "horizontal") {
+      const shouldOpen = offsetRef.current <= -SWIPE_ACTION_WIDTH / 2;
+      updateOffset(shouldOpen ? -SWIPE_ACTION_WIDTH : 0);
+      if (shouldOpen) onSwipeOpen?.();
+      else onSwipeClose?.();
+
+      if (suppressTimerRef.current) clearTimeout(suppressTimerRef.current);
+      suppressTimerRef.current = setTimeout(() => {
+        suppressOpenRef.current = false;
+      }, 250);
+    }
+    directionRef.current = null;
+    setDragging(false);
+  }
+
+  function handleCardOpen() {
+    if (suppressOpenRef.current) return;
+    if (swipeOpen) {
+      onSwipeClose?.();
+      return;
+    }
+    onOpen();
+  }
 
   return (
-    <Card className="relative flex h-full flex-col p-7">
-      <ProductActionsMenu product={product} onDeleted={onDeleted} className="absolute right-3 top-3 z-10" />
-      <button type="button" onClick={onOpen} className="flex h-full w-full flex-col text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
+    <div
+      className="relative h-full overflow-hidden rounded-card shadow-card sm:overflow-visible sm:shadow-none"
+      data-product-swipe-card={product.id}
+    >
+      <ProductSwipeActions
+        product={product}
+        onDeleted={onDeleted}
+        onComplete={() => onSwipeClose?.()}
+        active={swipeOpen}
+      />
+      <Card
+        className="relative z-[1] flex h-full flex-col p-7 shadow-none transition-transform duration-200 ease-out touch-pan-y sm:!translate-x-0 sm:shadow-card"
+        style={{
+          transform: `translate3d(${offset}px, 0, 0)`,
+          transitionDuration: dragging ? "0ms" : undefined,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={finishTouch}
+        onTouchCancel={finishTouch}
+      >
+        <ProductActionsMenu
+          product={product}
+          onDeleted={onDeleted}
+          className="absolute right-3 top-3 z-10 hidden sm:block"
+        />
+        <button type="button" onClick={handleCardOpen} className="flex h-full w-full flex-col text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
         <h3 className="w-full truncate pr-8 text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
           {product.name}
         </h3>
@@ -104,7 +227,8 @@ export function ProductCardGrid({
             <span>{formatExpirationCompact(product)}</span>
           </div>
         </div>
-      </button>
-    </Card>
+        </button>
+      </Card>
+    </div>
   );
 }

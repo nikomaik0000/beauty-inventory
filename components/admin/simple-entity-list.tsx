@@ -28,12 +28,20 @@ export function SimpleEntityList({
   }
 
   return (
-    <ul className="divide-y divide-divider rounded-card border border-border bg-surface shadow-card">
+    <ul className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+        <li
+          key={item.id}
+          className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-2.5 shadow-card"
+        >
           {editingId === item.id ? (
             <>
-              <Input value={draft} onChange={(e) => setDraft(e.target.value)} className="h-8" autoFocus />
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                className="h-8 min-w-0 flex-1"
+                autoFocus
+              />
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
@@ -63,7 +71,7 @@ export function SimpleEntityList({
             </>
           ) : (
             <>
-              <span className="text-sm text-textPrimary">{item.name}</span>
+              <span className="min-w-0 truncate text-sm text-textPrimary">{item.name}</span>
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"

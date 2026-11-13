@@ -22,7 +22,7 @@ export default function BrandsAdminPage() {
   }, []);
 
   return (
-    <div className="max-w-lg">
+    <div className="w-full min-w-0">
       <h1 className="mb-1 text-xl font-semibold text-textPrimary">品牌</h1>
       <p className="mb-6 text-sm text-textMuted">
         在商品上輸入品牌名稱時會自動建立。您可以在這裡重新命名或清理清單。

@@ -64,7 +64,7 @@ export function MobileBottomNav() {
                 active ? "text-accentStrong" : "text-textMuted",
               )}
             >
-              <link.icon size={20} strokeWidth={active ? 2 : 1.75} />
+              <link.icon size={19} strokeWidth={1.8} />
               <span>{link.label}</span>
             </Link>
           );

@@ -39,7 +39,10 @@ export function ProductDetailDialog({
       onClose={onClose}
       title="商品詳細資訊"
       maxWidthClassName="max-w-lg"
-      mobileNearFullscreen
+      maxHeightClassName="max-h-[85dvh]"
+      viewportPaddingClassName="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
+      backdropClassName="bg-black/80"
+      animated={false}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
           <ProductActionsMenu product={product} onDeleted={onClose} />
@@ -90,7 +93,9 @@ export function ProductDetailDialog({
         <DetailRow label="容量">{formatCapacity(product.capacity) ?? "—"}</DetailRow>
         <DetailRow label="效期">{formatExpirationCompact(product)}</DetailRow>
         <DetailRow label="開封後期限">
-          {product.pao_months == null ? "未設定" : `${product.pao_months} 個月`}
+          {Number.isInteger(product.pao_months) && (product.pao_months ?? 0) > 0
+            ? `${product.pao_months} 個月`
+            : "未設定"}
         </DetailRow>
         <DetailRow label="備註">
           <span className="whitespace-pre-wrap break-words">{product.notes || "—"}</span>

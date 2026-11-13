@@ -66,7 +66,7 @@ export default function CategoriesAdminPage() {
   if (loading) return null;
 
   return (
-    <div className="max-w-2xl">
+    <div className="w-full min-w-0">
       <h1 className="mb-1 text-xl font-semibold text-textPrimary">分類</h1>
       <p className="mb-6 text-sm text-textMuted">
         大分類與小分類完全自訂 — 依您的收藏需求新增任意數量。
@@ -80,7 +80,7 @@ export default function CategoriesAdminPage() {
         }}
       />
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
         {categories.map((category) => (
           <div key={category.id} className="rounded-card border border-border bg-surface p-4 shadow-card">
             <div className="flex items-center justify-between gap-2">
@@ -165,7 +165,7 @@ export default function CategoriesAdminPage() {
                       </div>
                     ) : (
                       <>
-                        <span className="text-textSecondary">
+                        <span className="min-w-0 text-textSecondary">
                           {sub.name}
                           <span className="ml-2 text-xs text-textMuted">
                             {summaryBySubcategory[sub.id]?.count ?? 0} 件商品
