@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-images-server";
+import { PRODUCT_IMAGE_BUCKET } from "@/lib/product-image-path";
 
 /**
  * Supabase Storage upload for product images (client-side — this runs

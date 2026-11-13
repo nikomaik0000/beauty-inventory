@@ -6,5 +6,7 @@ out
 *.tsbuildinfo
 public/sw.js
 public/workbox-*.js
+public/worker-*.js
+.local-backups/
 .DS_Store
 .DS_Store

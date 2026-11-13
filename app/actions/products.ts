@@ -2,33 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { upsertBrandIdWithClient } from "@/lib/brands-server";
+import { requireInventoryUser } from "@/lib/inventory-auth";
 import { deleteProductImageServer } from "@/lib/product-images-server";
-import { productSchema, type ProductFormValues } from "@/lib/validations";
+import { productSchema, quantityAdjustmentSchema, type ProductFormValues } from "@/lib/validations";
 
 /** Finds a brand by name (case-insensitive) or creates it: only brands
  * actually in use appear anywhere else in the app. */
 export async function upsertBrandId(name: string): Promise<string | null> {
-  const trimmed = name.trim();
-  if (!trimmed) return null;
-
-  const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("brands")
-    .select("id")
-    .ilike("name", trimmed)
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
-  const { data: created, error } = await supabase
-    .from("brands")
-    .insert({ name: trimmed })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(`Could not create brand "${trimmed}": ${error.message}`);
-  return created.id;
+  const { supabase } = await requireInventoryUser();
+  return upsertBrandIdWithClient(supabase, name);
 }
 
 function toDbRow(values: ProductFormValues, brandId: string | null) {
@@ -40,8 +23,6 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
     image_url: values.image_url || null,
     expiration_type: values.expiration_type,
     expiration_date: values.expiration_type === "dated" ? values.expiration_date || null : null,
-    opened: values.opened,
-    opened_date: values.opened ? values.opened_date || null : null,
     pao_months: values.pao_months === "" || values.pao_months == null ? null : Number(values.pao_months),
     capacity: values.capacity === "" || values.capacity == null ? null : Number(values.capacity),
     quantity: values.quantity,
@@ -50,16 +31,36 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
 }
 
 export async function createProduct(raw: ProductFormValues) {
+  const { supabase } = await requireInventoryUser();
   const values = productSchema.parse(raw);
-  const brandId = await upsertBrandId(values.brand_name ?? "");
+  const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("products").insert(toDbRow(values, brandId));
+  const { error } = await supabase.from("products").insert({
+    ...toDbRow(values, brandId),
+    opened: false,
+    opened_date: null,
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin");
+  redirect("/");
+}
+
+async function deleteImageIfUnreferenced(
+  supabase: Awaited<ReturnType<typeof requireInventoryUser>>["supabase"],
+  imageUrl: string | null | undefined,
+) {
+  if (!imageUrl) return;
+
+  const { data: reference } = await supabase
+    .from("products")
+    .select("id")
+    .eq("image_url", imageUrl)
+    .limit(1)
+    .maybeSingle();
+
+  if (!reference) await deleteProductImageServer(supabase, imageUrl);
 }
 
 /** Image replacement is deliberately sequenced as: save the DB row
@@ -70,10 +71,9 @@ export async function createProduct(raw: ProductFormValues) {
  * it this way, the worst case is a harmless orphaned file, which the
  * Storage Maintenance tool (/admin/settings) cleans up. */
 export async function updateProduct(id: string, raw: ProductFormValues) {
+  const { supabase } = await requireInventoryUser();
   const values = productSchema.parse(raw);
-  const brandId = await upsertBrandId(values.brand_name ?? "");
-
-  const supabase = await createClient();
+  const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
 
   const { data: existing } = await supabase.from("products").select("image_url").eq("id", id).maybeSingle();
 
@@ -82,16 +82,16 @@ export async function updateProduct(id: string, raw: ProductFormValues) {
 
   const newImageUrl = values.image_url || null;
   if (existing?.image_url && existing.image_url !== newImageUrl) {
-    await deleteProductImageServer(supabase, existing.image_url);
+    await deleteImageIfUnreferenced(supabase, existing.image_url);
   }
 
   revalidatePath("/");
   revalidatePath("/admin");
-  redirect("/admin");
+  redirect("/");
 }
 
 export async function deleteProduct(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
 
   const { data: existing } = await supabase.from("products").select("image_url").eq("id", id).maybeSingle();
 
@@ -101,19 +101,38 @@ export async function deleteProduct(id: string) {
   // Delete the DB record first: that's the part the person is actually
   // waiting on. Storage cleanup afterward is best-effort — see
   // deleteProductImageServer.
-  await deleteProductImageServer(supabase, existing?.image_url);
+  await deleteImageIfUnreferenced(supabase, existing?.image_url);
 
   revalidatePath("/");
   revalidatePath("/admin");
 }
 
-export async function toggleOpened(id: string, opened: boolean, openedDate: string | null) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("products")
-    .update({ opened, opened_date: opened ? openedDate ?? new Date().toISOString().slice(0, 10) : null })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+/**
+ * Uses the Phase 2 database RPC draft so concurrent clicks/tabs update
+ * `quantity = quantity + delta` in one statement instead of overwriting a
+ * stale value. Until that draft is deployed, this action fails closed with a
+ * clear message and the detail dialog leaves the persisted quantity unchanged.
+ */
+export async function adjustProductQuantity(productId: string, delta: -1 | 1): Promise<number> {
+  const { supabase } = await requireInventoryUser();
+  const input = quantityAdjustmentSchema.parse({ productId, delta });
+  const { data, error } = await supabase.rpc("adjust_product_quantity", {
+    product_id: input.productId,
+    quantity_delta: input.delta,
+  });
+
+  if (error) {
+    if (error.code === "PGRST202" || error.message.includes("adjust_product_quantity")) {
+      throw new Error("快速庫存尚未啟用，請先套用並驗證 Phase 2 原子庫存 migration。");
+    }
+    throw new Error(error.message);
+  }
+
+  const quantity = Number(data);
+  if (!Number.isInteger(quantity) || quantity < 0) {
+    throw new Error("庫存更新回傳了無效結果，請重新整理後再試一次。");
+  }
 
   revalidatePath("/");
+  return quantity;
 }

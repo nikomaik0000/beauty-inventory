@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireInventoryUser } from "@/lib/inventory-auth";
 import { categorySchema, subcategorySchema } from "@/lib/validations";
 
 // --- Categories ---------------------------------------------------------
 
 export async function createCategory(name: string) {
+  const { supabase } = await requireInventoryUser();
   const values = categorySchema.parse({ name });
-  const supabase = await createClient();
   const { error } = await supabase.from("categories").insert({ name: values.name.trim() });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categories");
@@ -16,8 +16,8 @@ export async function createCategory(name: string) {
 }
 
 export async function renameCategory(id: string, name: string) {
+  const { supabase } = await requireInventoryUser();
   const values = categorySchema.parse({ name });
-  const supabase = await createClient();
   const { error } = await supabase.from("categories").update({ name: values.name.trim() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categories");
@@ -25,7 +25,7 @@ export async function renameCategory(id: string, name: string) {
 }
 
 export async function deleteCategory(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categories");
@@ -35,8 +35,8 @@ export async function deleteCategory(id: string) {
 // --- Subcategories -------------------------------------------------------
 
 export async function createSubcategory(categoryId: string, name: string) {
+  const { supabase } = await requireInventoryUser();
   const values = subcategorySchema.parse({ category_id: categoryId, name });
-  const supabase = await createClient();
   const { error } = await supabase
     .from("subcategories")
     .insert({ category_id: values.category_id, name: values.name.trim() });
@@ -46,7 +46,7 @@ export async function createSubcategory(categoryId: string, name: string) {
 }
 
 export async function renameSubcategory(id: string, name: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const { error } = await supabase.from("subcategories").update({ name: name.trim() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categories");
@@ -54,7 +54,7 @@ export async function renameSubcategory(id: string, name: string) {
 }
 
 export async function deleteSubcategory(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const { error } = await supabase.from("subcategories").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/categories");
@@ -64,7 +64,7 @@ export async function deleteSubcategory(id: string) {
 // --- Brands ---------------------------------------------------------------
 
 export async function renameBrand(id: string, name: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const { error } = await supabase.from("brands").update({ name: name.trim() }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/brands");
@@ -72,7 +72,7 @@ export async function renameBrand(id: string, name: string) {
 }
 
 export async function deleteBrand(id: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const { error } = await supabase.from("brands").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/brands");

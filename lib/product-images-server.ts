@@ -1,17 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { extractProductImagePath, PRODUCT_IMAGE_BUCKET } from "@/lib/product-image-path";
 
-export const PRODUCT_IMAGE_BUCKET = "product-images";
+export { PRODUCT_IMAGE_BUCKET } from "@/lib/product-image-path";
 
 /** Extracts the storage object path from a public Supabase Storage URL,
  * e.g. ".../storage/v1/object/public/product-images/abc123.webp" →
  * "abc123.webp". Returns null for anything that isn't a URL in this
  * bucket (defensive — a null/malformed image_url should never throw). */
 export function extractStoragePath(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const marker = `/${PRODUCT_IMAGE_BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return url.slice(idx + marker.length);
+  return extractProductImagePath(url);
 }
 
 /** Best-effort delete, given a server-side Supabase client (from

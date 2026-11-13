@@ -1,4 +1,5 @@
 import withPWAInit from "next-pwa";
+import { inventoryRuntimeCaching } from "./lib/pwa-runtime-cache.mjs";
 
 // Phase 6A note on how deploys reach installed users, since this uses
 // next-pwa 5.6.0's defaults (verified in node_modules/next-pwa/index.js)
@@ -24,6 +25,9 @@ const withPWA = withPWAInit({
   skipWaiting: true,
   clientsClaim: true,
   cleanupOutdatedCaches: true,
+  cacheStartUrl: false,
+  dynamicStartUrl: false,
+  runtimeCaching: inventoryRuntimeCaching,
 });
 
 /** @type {import('next').NextConfig} */

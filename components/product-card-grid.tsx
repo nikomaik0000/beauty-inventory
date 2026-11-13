@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { Calendar, Package, PackageOpen } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ProductActionsMenu } from "@/components/product-actions-menu";
+import { protectedProductImageUrl } from "@/lib/product-image-path";
 import { categoryAccent, productImageSize } from "@/lib/theme";
 import { formatCapacity, formatExpirationCompact, initials } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
@@ -26,32 +28,40 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export function ProductCardGrid({
   product,
   categoryIndex = 0,
+  onOpen,
+  onDeleted,
 }: {
   product: ProductWithRelations;
   categoryIndex?: number;
+  onOpen: () => void;
+  onDeleted?: () => void;
 }) {
   const capacityText = formatCapacity(product.capacity);
+  const imageSrc = protectedProductImageUrl(product.image_url);
 
   return (
-    <Card className="flex h-full flex-col p-7">
-      <h3 className="truncate text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
-        {product.name}
-      </h3>
+    <Card className="relative flex h-full flex-col p-7">
+      <ProductActionsMenu product={product} onDeleted={onDeleted} className="absolute right-3 top-3 z-10" />
+      <button type="button" onClick={onOpen} className="flex h-full w-full flex-col text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
+        <h3 className="w-full truncate pr-8 text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
+          {product.name}
+        </h3>
 
-      <div className="mt-4 border-t border-divider" />
+        <div className="mt-4 w-full border-t border-divider" />
 
       {/* items-start (not center): the info column always aligns to the
           top of the image, even when Notes pushes it to 2-3 lines. */}
-      <div className="mt-6 flex items-start gap-4">
+        <div className="mt-6 flex w-full items-start gap-4">
         <div
           className="relative shrink-0 overflow-hidden rounded-input border border-border bg-surface"
           style={{ width: productImageSize, height: productImageSize }}
         >
-          {product.image_url ? (
+          {imageSrc ? (
             <Image
-              src={product.image_url}
+              src={imageSrc}
               alt={product.name}
               fill
+              unoptimized
               sizes={`${productImageSize}px`}
               className="object-contain p-2"
             />
@@ -86,18 +96,15 @@ export function ProductCardGrid({
             <p className="line-clamp-3 text-xs leading-[1.6] text-textSecondary">{product.notes}</p>
           )}
         </div>
-      </div>
-
-      <div className="mt-6 flex items-center justify-between text-xs text-textSecondary">
-        <div className="flex items-center gap-1.5">
-          <Calendar size={14} strokeWidth={1.75} />
-          <span>{formatExpirationCompact(product)}</span>
         </div>
-        
-        <span className="text-textMuted" role="img" aria-label={product.opened ? "已開封" : "未開封"}>
-          {product.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} />}
-        </span>
-      </div>
+
+        <div className="mt-auto flex w-full items-center pt-6 text-xs text-textSecondary">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={14} strokeWidth={1.75} />
+            <span>{formatExpirationCompact(product)}</span>
+          </div>
+        </div>
+      </button>
     </Card>
   );
 }

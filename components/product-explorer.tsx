@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortMenu } from "@/components/sort-menu";
 import { ViewToggle } from "@/components/view-toggle";
 import { ProductListTable } from "@/components/product-list-table";
 import { ProductCardGrid } from "@/components/product-card-grid";
+import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { daysUntil, isExpiringSoon, volumeContribution } from "@/lib/utils";
 import { defaultFilters } from "@/lib/types";
@@ -35,12 +38,12 @@ export function ProductExplorer({
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>("beauty-inventory:view-mode", "list");
   const [sortField, setSortField] = useLocalStorage<SortField>("beauty-inventory:sort-field", "expiration");
   const [filters, setFilters] = useState<ProductFilters>(defaultFilters);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const activeFilterCount =
     (filters.categoryId ? 1 : 0) +
     (filters.subcategoryId ? 1 : 0) +
     (filters.brandId ? 1 : 0) +
-    (filters.openedStatus !== "all" ? 1 : 0) +
     (filters.expiringSoonOnly ? 1 : 0);
 
   const filtered = useMemo(() => {
@@ -51,8 +54,6 @@ export function ProductExplorer({
       if (filters.categoryId && p.category_id !== filters.categoryId) return false;
       if (filters.subcategoryId && p.subcategory_id !== filters.subcategoryId) return false;
       if (filters.brandId && p.brand_id !== filters.brandId) return false;
-      if (filters.openedStatus === "opened" && !p.opened) return false;
-      if (filters.openedStatus === "unopened" && p.opened) return false;
       if (filters.expiringSoonOnly && !isExpiringSoon(p)) return false;
       return true;
     });
@@ -102,6 +103,10 @@ export function ProductExplorer({
     return [`共 ${productCount} 件商品`, `總庫存 ${totalStock}`, `總容量 ${totalVolume}`];
   }, [sorted]);
 
+  const selectedProduct = selectedProductId
+    ? products.find((product) => product.id === selectedProductId) ?? null
+    : null;
+
   return (
     <div className="w-full min-w-0">
       {/* Row 1: search, full width.
@@ -138,17 +143,36 @@ export function ProductExplorer({
         </div>
       ) : viewMode === "list" ? (
         <div className="mt-8">
-          <ProductListTable products={sorted} />
+          <ProductListTable products={sorted} onOpen={setSelectedProductId} />
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
-              <ProductCardGrid product={p} categoryIndex={categoryIndexOf(p.category_id)} />
+            <motion.div className="h-full" key={p.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15, delay: Math.min(i, 8) * 0.02 }}>
+              <ProductCardGrid
+                product={p}
+                categoryIndex={categoryIndexOf(p.category_id)}
+                onOpen={() => setSelectedProductId(p.id)}
+                onDeleted={() => setSelectedProductId(null)}
+              />
             </motion.div>
           ))}
         </div>
       )}
+
+      <Link
+        href="/admin/products/new"
+        aria-label="新增商品"
+        className="fixed bottom-[calc(5.2rem+env(safe-area-inset-bottom))] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-button border border-border bg-surface text-accentStrong shadow-dialog sm:hidden"
+      >
+        <Plus size={24} strokeWidth={1.75} />
+      </Link>
+
+      <ProductDetailDialog
+        product={selectedProduct}
+        open={!!selectedProduct}
+        onClose={() => setSelectedProductId(null)}
+      />
     </div>
   );
 }

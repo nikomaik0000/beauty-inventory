@@ -5,6 +5,7 @@ import { AlertCircle, ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { optimizeImageForUpload, validateImageFile, ImageProcessingError } from "@/lib/image-optimize";
 import { uploadProductImage, ImageUploadError } from "@/lib/product-images";
+import { protectedProductImageUrl } from "@/lib/product-image-path";
 
 /**
  * Product image field: click or drag-and-drop to upload, large preview,
@@ -97,7 +98,7 @@ export function ImageUploader({
     onChange("");
   }
 
-  const displaySrc = localPreview ?? (value || null);
+  const displaySrc = localPreview ?? protectedProductImageUrl(value);
 
   return (
     <div>

@@ -10,7 +10,7 @@ import {
   useReactTable,
   type SortingState,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Package, PackageOpen, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteProduct } from "@/app/actions/products";
@@ -58,15 +58,6 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
         id: "expiration",
         header: "效期",
         cell: ({ row }) => <span className="block text-center tabular-nums text-xs">{formatExpirationCompact(row.original)}</span>,
-      }),
-      columnHelper.display({
-        id: "opened",
-        header: "開封",
-        cell: ({ row }) => (
-          <span className="flex justify-center text-textPrimary" role="img" aria-label={row.original.opened ? "已開封" : "未開封"}>
-            {row.original.opened ? <PackageOpen size={16} strokeWidth={1.75} /> : <Package size={16} strokeWidth={1.75} className="opacity-50" />}
-          </span>
-        ),
       }),
       columnHelper.display({
         id: "actions",
@@ -120,7 +111,7 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       </div>
     );
   }
-  const centerHeaders = ["brand","capacity", "quantity", "expiration", "opened"];
+  const centerHeaders = ["brand","capacity", "quantity", "expiration"];
   return (
     <Card>
       {/* Tablet / desktop: a fluid table-fixed layout (no forced
@@ -131,12 +122,11 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
       <div className="hidden lg:block">
         <table className="w-full table-fixed text-left text-sm">
           <colgroup>
-            <col style={{ width: "33%" }} />
-            <col style={{ width: "17%" }} />
+            <col style={{ width: "36%" }} />
+            <col style={{ width: "18%" }} />
             <col style={{ width: "10%" }} />
             <col style={{ width: "10%" }} />
             <col style={{ width: "16%" }} />
-            <col style={{ width: "8%" }} />
             <col style={{ width: "10%" }} />
           </colgroup>
           <thead>
@@ -224,9 +214,6 @@ export function ProductTable({ products }: { products: ProductWithRelations[] })
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-textPrimary">
                 <span>{formatExpirationCompact(p)}</span>
                 <span>{capacityText ? `${capacityText} · ` : ""}{p.quantity}</span>
-                <span role="img" aria-label={p.opened ? "已開封" : "未開封"}>
-                  {p.opened ? <PackageOpen size={14} strokeWidth={1.75} /> : <Package size={14} strokeWidth={1.75} className="opacity-50" />}
-                </span>
               </div>
             </li>
           );

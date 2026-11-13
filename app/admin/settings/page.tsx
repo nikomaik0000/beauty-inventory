@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { StorageMaintenance } from "@/components/admin/storage-maintenance";
-import { signOut } from "@/app/actions/auth";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export default function SettingsPage() {
   return (
@@ -13,15 +13,12 @@ export default function SettingsPage() {
       <StorageMaintenance />
 
       <div className="border-t border-divider pt-6">
-        <form action={signOut}>
-          <button
-            type="submit"
+          <SignOutButton
             className="flex items-center gap-2 rounded-input border border-border bg-surface px-3.5 py-2 text-sm font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
           >
             <LogOut size={20} strokeWidth={1.75} />
             登出
-          </button>
-        </form>
+          </SignOutButton>
       </div>
     </div>
   );

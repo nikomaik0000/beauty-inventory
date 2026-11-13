@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, Sparkles } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -12,13 +12,22 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <Link
-          href="/admin"
-          className="flex h-9 shrink-0 items-center gap-1.5 rounded-button border border-border bg-surface px-3.5 text-xs font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
-        >
-          <Settings size={14} strokeWidth={1.75} />
-          <span className="hidden sm:inline">後台</span>
-        </Link>
+        <div className="hidden items-center gap-2 sm:flex">
+          <Link
+            href="/admin/products/new"
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-button border border-border bg-surface px-3.5 text-xs font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
+          >
+            <Plus size={14} strokeWidth={1.75} />
+            新增商品
+          </Link>
+          <Link
+            href="/admin/settings"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-button border border-border bg-surface text-textSecondary transition-colors hover:bg-surfaceMuted"
+            aria-label="設定"
+          >
+            <Settings size={14} strokeWidth={1.75} />
+          </Link>
+        </div>
       </div>
     </header>
   );

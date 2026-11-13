@@ -29,8 +29,7 @@ export function AdminProductManager({
   const activeFilterCount =
     (filters.categoryId ? 1 : 0) +
     (filters.subcategoryId ? 1 : 0) +
-    (filters.brandId ? 1 : 0) +
-    (filters.openedStatus !== "all" ? 1 : 0);
+    (filters.brandId ? 1 : 0);
 
   const filtersActive = activeFilterCount > 0 || filters.search.trim() !== "";
 
@@ -41,8 +40,6 @@ export function AdminProductManager({
       if (filters.categoryId && p.category_id !== filters.categoryId) return false;
       if (filters.subcategoryId && p.subcategory_id !== filters.subcategoryId) return false;
       if (filters.brandId && p.brand_id !== filters.brandId) return false;
-      if (filters.openedStatus === "opened" && !p.opened) return false;
-      if (filters.openedStatus === "unopened" && p.opened) return false;
       return true;
     });
   }, [products, filters]);

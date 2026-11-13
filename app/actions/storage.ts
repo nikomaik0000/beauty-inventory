@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { extractStoragePath, PRODUCT_IMAGE_BUCKET } from "@/lib/product-images-server";
+import { requireInventoryUser } from "@/lib/inventory-auth";
 
 export interface OrphanedImage {
   path: string;
@@ -16,7 +16,7 @@ export interface OrphanedImage {
  * isn't referenced by anything. Nothing is deleted here — this is a
  * read-only scan; see deleteOrphanedImages for the actual cleanup. */
 export async function findOrphanedImages(): Promise<OrphanedImage[]> {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
 
   const [{ data: rootEntries }, { data: productsEntries }, { data: products }] = await Promise.all([
     supabase.storage.from(PRODUCT_IMAGE_BUCKET).list("", { limit: 1000 }),
@@ -54,9 +54,8 @@ export async function findOrphanedImages(): Promise<OrphanedImage[]> {
  * delete silently removing something that became referenced in
  * between. */
 export async function deleteOrphanedImages(paths: string[]): Promise<{ deleted: number }> {
+  const { supabase } = await requireInventoryUser();
   if (paths.length === 0) return { deleted: 0 };
-
-  const supabase = await createClient();
   const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(paths);
   if (error) throw new Error(error.message);
 

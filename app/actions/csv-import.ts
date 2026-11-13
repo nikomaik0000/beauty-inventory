@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { upsertBrandId } from "@/app/actions/products";
+import { upsertBrandIdWithClient } from "@/lib/brands-server";
+import { requireInventoryUser } from "@/lib/inventory-auth";
 import type { ValidImportRow } from "@/lib/csv-import";
 
 export interface ImportSummary {
@@ -18,12 +18,12 @@ export interface ImportSummary {
  * the actual writes. Images are never created, replaced, or deleted
  * here; that stays entirely on the existing upload flow. */
 export async function importProductRows(rows: ValidImportRow[]): Promise<ImportSummary> {
-  const supabase = await createClient();
+  const { supabase } = await requireInventoryUser();
   const summary: ImportSummary = { created: 0, updated: 0, failed: 0, errors: [] };
 
   for (const row of rows) {
     try {
-      const brandId = await upsertBrandId(row.brandName);
+      const brandId = await upsertBrandIdWithClient(supabase, row.brandName);
 
       if (row.matchedProductId) {
         // Matched product: only update the fields this feature owns.

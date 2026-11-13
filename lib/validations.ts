@@ -9,8 +9,6 @@ export const productSchema = z
     image_url: z.string().url().optional().or(z.literal("")),
     expiration_type: z.enum(["dated", "none", "unknown"]),
     expiration_date: z.string().optional().or(z.literal("")),
-    opened: z.boolean().default(false),
-    opened_date: z.string().optional().or(z.literal("")),
     pao_months: z
       .union([z.coerce.number().int().min(0).max(120), z.literal("")])
       .optional(),
@@ -23,13 +21,14 @@ export const productSchema = z
   .refine(
     (data) => data.expiration_type !== "dated" || !!data.expiration_date,
     { message: "Expiration date is required when type is “Has Expiration Date”", path: ["expiration_date"] },
-  )
-  .refine(
-    (data) => !data.opened || !!data.opened_date,
-    { message: "Opened date is required once a product is marked opened", path: ["opened_date"] },
   );
 
 export type ProductFormValues = z.infer<typeof productSchema>;
+
+export const quantityAdjustmentSchema = z.object({
+  productId: z.string().uuid(),
+  delta: z.union([z.literal(-1), z.literal(1)]),
+});
 
 export const categorySchema = z.object({
   name: z.string().min(1, "Name is required").max(80),

@@ -21,6 +21,7 @@ export function Dialog({
   footer,
   maxWidthClassName = "max-w-sm",
   contentRef,
+  mobileNearFullscreen = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,6 +33,7 @@ export function Dialog({
    * it as a boundary so its own dropdowns never render past the
    * footer. Optional; nothing changes for callers that don't pass it. */
   contentRef?: Ref<HTMLDivElement>;
+  mobileNearFullscreen?: boolean;
 }) {
   // Escape closes the dialog, same as clicking the backdrop or the × —
   // standard dialog behavior, not a new interaction. A nested open
@@ -47,10 +49,24 @@ export function Dialog({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
+        <div
+          className={cn(
+            "fixed inset-0 z-40 flex items-center justify-center p-4",
+            mobileNearFullscreen && "items-end p-0 pt-3 sm:items-center sm:p-4",
+          )}
+        >
           <motion.button
             type="button"
             aria-label={`關閉${title}`}
@@ -72,6 +88,8 @@ export function Dialog({
             transition={{ duration: animation.motion.base }}
             className={cn(
               "relative flex max-h-[80vh] w-full flex-col overflow-hidden rounded-dialog border border-border bg-surface shadow-dialog",
+              mobileNearFullscreen &&
+                "h-[calc(100dvh-0.75rem)] max-h-none rounded-b-none sm:h-auto sm:max-h-[80vh] sm:rounded-b-dialog",
               maxWidthClassName,
             )}
           >
@@ -93,7 +111,11 @@ export function Dialog({
               {children}
             </div>
 
-            {footer && <div className="flex items-center justify-between gap-2 border-t border-divider px-5 py-4">{footer}</div>}
+            {footer && (
+              <div className="flex items-center justify-between gap-2 border-t border-divider px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:py-4">
+                {footer}
+              </div>
+            )}
           </motion.div>
         </div>
       )}

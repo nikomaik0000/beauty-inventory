@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,38 +15,41 @@ export function ProductForm({
   categories,
   subcategories,
   product,
+  initialProduct,
 }: {
   categories: Category[];
   subcategories: Subcategory[];
   product?: ProductWithRelations;
+  initialProduct?: ProductWithRelations;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const bypassWarningRef = useRef(false);
+  const sourceProduct = product ?? initialProduct;
 
   const {
     register,
     handleSubmit,
     watch,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: product
+    defaultValues: sourceProduct
       ? {
-          name: product.name,
-          brand_name: product.brand?.name ?? "",
-          category_id: product.category_id,
-          subcategory_id: product.subcategory_id,
-          image_url: product.image_url ?? "",
-          expiration_type: product.expiration_type,
-          expiration_date: product.expiration_date ?? "",
-          opened: product.opened,
-          opened_date: product.opened_date ?? "",
-          pao_months: product.pao_months ?? "",
-          capacity: product.capacity ?? "",
-          quantity: product.quantity,
-          notes: product.notes ?? "",
+          name: initialProduct && !product ? `${sourceProduct.name}（副本）` : sourceProduct.name,
+          brand_name: sourceProduct.brand?.name ?? "",
+          category_id: sourceProduct.category_id,
+          subcategory_id: sourceProduct.subcategory_id,
+          image_url: sourceProduct.image_url ?? "",
+          expiration_type: sourceProduct.expiration_type,
+          expiration_date: sourceProduct.expiration_date ?? "",
+          pao_months: sourceProduct.pao_months ?? "",
+          capacity: sourceProduct.capacity ?? "",
+          quantity: sourceProduct.quantity,
+          notes: sourceProduct.notes ?? "",
         }
       : {
           name: "",
@@ -56,8 +59,6 @@ export function ProductForm({
           image_url: "",
           expiration_type: "unknown",
           expiration_date: "",
-          opened: false,
-          opened_date: "",
           pao_months: "",
           capacity: "",
           quantity: 1,
@@ -67,20 +68,65 @@ export function ProductForm({
 
   const selectedCategoryId = watch("category_id");
   const expirationType = watch("expiration_type");
-  const opened = watch("opened");
 
   const visibleSubcategories = subcategories.filter((s) => s.category_id === selectedCategoryId);
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (bypassWarningRef.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    const interceptLinks = (event: MouseEvent) => {
+      if (bypassWarningRef.current || event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+      if (!confirm("尚有未儲存的變更，確定要離開嗎？")) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else {
+        bypassWarningRef.current = true;
+      }
+    };
+
+    window.addEventListener("beforeunload", beforeUnload);
+    document.addEventListener("click", interceptLinks, true);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      document.removeEventListener("click", interceptLinks, true);
+    };
+  }, [isDirty]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      setKeyboardInset(Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop));
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, []);
 
   const onSubmit = (values: ProductFormValues) => {
     setServerError(null);
     startTransition(async () => {
       try {
+        bypassWarningRef.current = true;
         if (product) {
           await updateProduct(product.id, values);
         } else {
           await createProduct(values);
         }
       } catch (err) {
+        bypassWarningRef.current = false;
         // NEXT_REDIRECT is thrown by successful server actions; rethrow it
         if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
         setServerError(err instanceof Error ? err.message : "發生錯誤，請再試一次。");
@@ -89,7 +135,16 @@ export function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-24 sm:pb-0">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      onFocusCapture={(event) => {
+        if (window.innerWidth >= 640) return;
+        const target = event.target as HTMLElement;
+        window.setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 180);
+      }}
+      className="space-y-6 pb-28 sm:pb-0"
+      style={{ paddingBottom: keyboardInset > 0 ? `calc(7rem + ${keyboardInset}px)` : undefined }}
+    >
       {serverError && (
         <div className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
           {serverError}
@@ -197,20 +252,6 @@ export function ProductForm({
         <Input id="pao_months" type="number" min={0} {...register("pao_months")} placeholder="例如：12" />
       </div>
 
-      <div className="flex flex-col gap-2.5 rounded-input border border-border bg-surfaceMuted/50 p-4">
-        <label className="flex items-center gap-2 text-sm text-textPrimary">
-          <input type="checkbox" className="h-4 w-4 rounded border-border accent-accent" {...register("opened")} />
-          已開封
-        </label>
-        {opened && (
-          <div>
-            <Label htmlFor="opened_date">開封日期</Label>
-            <Input id="opened_date" type="date" {...register("opened_date")} />
-            <FieldError message={errors.opened_date?.message} />
-          </div>
-        )}
-      </div>
-
       <div>
         <Label htmlFor="notes">備註</Label>
         <Textarea id="notes" {...register("notes")} placeholder="任何值得記錄的小筆記…" />
@@ -223,6 +264,7 @@ export function ProductForm({
           inline row — no border, no background, no fixed positioning. */}
       <div
         className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-2"
+        style={{ bottom: keyboardInset > 0 ? keyboardInset : undefined }}
       >
         <Button type="submit" disabled={pending} className="flex-1 justify-center sm:flex-none">
           {pending ? "儲存中…" : product ? "儲存變更" : "新增商品"}
@@ -230,7 +272,11 @@ export function ProductForm({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/admin")}
+          onClick={() => {
+            if (isDirty && !confirm("尚有未儲存的變更，確定要離開嗎？")) return;
+            bypassWarningRef.current = true;
+            router.push("/");
+          }}
           className="flex-1 justify-center sm:flex-none"
         >
           取消

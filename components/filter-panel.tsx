@@ -129,21 +129,6 @@ export function FilterPanel({
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-textSecondary">開封狀態</label>
-          <DropdownField
-            boundaryRef={dialogBodyRef}
-            value={draft.openedStatus}
-            onChange={(v) => update("openedStatus", v as ProductFilters["openedStatus"])}
-            placeholder="全部"
-            ariaLabel="開封狀態"
-            options={[
-              { value: "all", label: "全部" },
-              { value: "opened", label: "僅已開封" },
-              { value: "unopened", label: "僅未開封" },
-            ]}
-          />
-        </div>
       </Dialog>
     </>
   );

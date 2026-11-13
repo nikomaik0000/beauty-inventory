@@ -56,7 +56,6 @@ export interface ProductFilters {
   categoryId: string | null;
   subcategoryId: string | null;
   brandId: string | null;
-  openedStatus: "all" | "opened" | "unopened";
   expiringSoonOnly: boolean;
 }
 
@@ -65,6 +64,5 @@ export const defaultFilters: ProductFilters = {
   categoryId: null,
   subcategoryId: null,
   brandId: null,
-  openedStatus: "all",
   expiringSoonOnly: false,
 };
