@@ -141,12 +141,45 @@ test("image references reject URLs, traversal and query tokens", () => {
   assert.ok(result.errors.some((error) => error.includes("image.storagePath")));
 });
 
-test("server actions authorize before reading and expose no JSON mutation", async () => {
+test("update mode distinguishes omitted fields from explicit null", () => {
+  const current = product();
+  const omitted = previewProductJson(jsonFor([{ id: PRODUCT_ID, quantity: 3 }]), "update", [current]);
+  assert.equal(omitted.valid, true);
+  assert.deepEqual(omitted.items[0].changes.map((change) => change.field), ["quantity"]);
+
+  const explicitNull = previewProductJson(jsonFor([{ id: PRODUCT_ID, notes: null }]), "update", [current]);
+  assert.equal(explicitNull.valid, true);
+  assert.deepEqual(explicitNull.items[0].changes.map((change) => change.field), ["notes"]);
+  assert.equal(explicitNull.items[0].changes[0].after, "—");
+});
+
+test("add mode can generate a UUID when no likely duplicate exists", () => {
+  const record = buildProductJsonDocument([product({ name: "獨特新品" })]).products[0];
+  record.id = null;
+  const result = previewProductJson(jsonFor([record]), "add", [product()]);
+  assert.equal(result.valid, true);
+  assert.equal(result.counts.new, 1);
+  assert.match(result.items[0].message, /產生新 UUID/);
+});
+
+test("a 28-product export round trip remains entirely unchanged", () => {
+  const products = Array.from({ length: 28 }, (_, index) => product({
+    id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+    name: `商品 ${index + 1}`,
+  }));
+  const raw = JSON.stringify(buildProductJsonDocument(products, "2026-11-16T00:00:00.000Z"));
+  const result = previewProductJson(raw, "update", products);
+  assert.equal(result.valid, true);
+  assert.equal(result.counts.unchanged, 28);
+  assert.equal(result.counts.new + result.counts.update + result.counts.delete + result.counts.conflict + result.counts.error, 0);
+});
+
+test("server actions authorize reads and do not perform direct table mutation", async () => {
   const action = await readFile(new URL("../app/actions/product-json.ts", import.meta.url), "utf8");
   const settings = await readFile(new URL("../app/admin/settings/page.tsx", import.meta.url), "utf8");
   const exportBody = action.match(/export async function exportProductsJson[\s\S]*?\n}/)?.[0] ?? "";
   const previewBody = action.match(/export async function previewProductsJson[\s\S]*?\n}/)?.[0] ?? "";
-  assert.equal((action.match(/await requireInventoryUser\(\)/g) ?? []).length, 2);
+  assert.ok((action.match(/await requireInventoryUser\(\)/g) ?? []).length >= 6);
   assert.ok(exportBody.indexOf("await requireInventoryUser()") < exportBody.indexOf("loadAllProducts"));
   assert.ok(previewBody.indexOf("await requireInventoryUser()") < previewBody.indexOf("rawText.length"));
   assert.ok(previewBody.indexOf("await requireInventoryUser()") < previewBody.indexOf("loadAllProducts"));

@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
 import { JsonDataManager } from "@/components/admin/json-data-manager";
+import { InventoryBackupManager } from "@/components/admin/inventory-backup-manager";
 import { StorageMaintenance } from "@/components/admin/storage-maintenance";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -12,6 +13,8 @@ export default function SettingsPage() {
       </div>
 
       <JsonDataManager />
+
+      <InventoryBackupManager />
 
       <StorageMaintenance />
 

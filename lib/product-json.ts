@@ -44,12 +44,22 @@ export interface JsonFieldDiff {
 
 export interface JsonPreviewItem {
   key: string;
+  sourceIndex: number | null;
   status: JsonPreviewStatus;
   name: string;
   productId: string | null;
   message: string | null;
   suggestedMatches: string[];
+  canConfirmAsNew: boolean;
   changes: JsonFieldDiff[];
+}
+
+export interface JsonExecutionState {
+  enabled: boolean;
+  previewToken: string | null;
+  expiresAt: string | null;
+  dataVersion: string | null;
+  reason: string | null;
 }
 
 export interface JsonPreviewResult {
@@ -60,6 +70,7 @@ export interface JsonPreviewResult {
   errors: string[];
   counts: Record<JsonPreviewStatus | "error", number>;
   items: JsonPreviewItem[];
+  execution?: JsonExecutionState;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -119,35 +130,43 @@ function relation(value: unknown, path: string, errors: string[]): JsonRelation 
   return { id: value.id, name: value.name.trim() };
 }
 
-function parseRecord(value: unknown, index: number, errors: string[]): ProductJsonRecord | null {
+type ParsedProductJsonRecord = ProductJsonRecord & { providedFields: Set<string> };
+
+function parseRecord(value: unknown, index: number, errors: string[], mode: JsonImportMode): ParsedProductJsonRecord | null {
   const path = `products[${index}]`;
   if (!isObject(value)) {
     errors.push(`${path} 必須是物件。`);
     return null;
   }
 
-  const id = value.id == null ? null : value.id;
+  const requiresFullRecord = mode !== "update";
+  const providedFields = new Set(Object.keys(value));
+  const has = (field: string) => providedFields.has(field);
+  const requireField = (field: string) => requiresFullRecord || has(field);
+
+  const id = has("id") && value.id != null ? value.id : null;
+  if (mode === "update" && !has("id")) errors.push(`${path}.id 在更新模式不可省略。`);
   if (id !== null && (typeof id !== "string" || !UUID_RE.test(id))) errors.push(`${path}.id 必須是有效 UUID 或 null。`);
-  if (typeof value.name !== "string" || !value.name.trim()) errors.push(`${path}.name 不可空白。`);
-  if (value.capacity !== null && (typeof value.capacity !== "number" || !Number.isFinite(value.capacity) || value.capacity < 0)) {
+  if (requireField("name") && (typeof value.name !== "string" || !value.name.trim())) errors.push(`${path}.name 不可空白。`);
+  if (requireField("capacity") && value.capacity !== null && (typeof value.capacity !== "number" || !Number.isFinite(value.capacity) || value.capacity < 0)) {
     errors.push(`${path}.capacity 必須是大於等於 0 的數字或 null。`);
   }
-  if (typeof value.quantity !== "number" || !Number.isInteger(value.quantity) || value.quantity < 0) {
+  if (requireField("quantity") && (typeof value.quantity !== "number" || !Number.isInteger(value.quantity) || value.quantity < 0)) {
     errors.push(`${path}.quantity 必須是大於等於 0 的整數。`);
   }
-  if (value.paoMonths !== null && (typeof value.paoMonths !== "number" || !Number.isInteger(value.paoMonths) || value.paoMonths < 0)) {
+  if (requireField("paoMonths") && value.paoMonths !== null && (typeof value.paoMonths !== "number" || !Number.isInteger(value.paoMonths) || value.paoMonths < 0)) {
     errors.push(`${path}.paoMonths 必須是大於等於 0 的整數或 null。`);
   }
-  if (!optionalString(value.notes)) errors.push(`${path}.notes 必須是字串或 null。`);
-  if (typeof value.createdAt !== "string" || !isIsoDateTime(value.createdAt)) errors.push(`${path}.createdAt 必須是 ISO 日期時間。`);
-  if (typeof value.updatedAt !== "string" || !isIsoDateTime(value.updatedAt)) errors.push(`${path}.updatedAt 必須是 ISO 日期時間。`);
+  if (requireField("notes") && !optionalString(value.notes)) errors.push(`${path}.notes 必須是字串或 null。`);
+  if (requireField("createdAt") && (typeof value.createdAt !== "string" || !isIsoDateTime(value.createdAt))) errors.push(`${path}.createdAt 必須是 ISO 日期時間。`);
+  if (requireField("updatedAt") && (typeof value.updatedAt !== "string" || !isIsoDateTime(value.updatedAt))) errors.push(`${path}.updatedAt 必須是 ISO 日期時間。`);
 
   const expiration = value.expiration;
   let expirationType: ExpirationType = "unknown";
   let expirationDate: string | null = null;
-  if (!isObject(expiration) || !["dated", "none", "unknown"].includes(String(expiration.type))) {
+  if (requireField("expiration") && (!isObject(expiration) || !["dated", "none", "unknown"].includes(String(expiration.type)))) {
     errors.push(`${path}.expiration.type 無效。`);
-  } else {
+  } else if (isObject(expiration)) {
     expirationType = expiration.type as ExpirationType;
     if (!optionalString(expiration.date)) errors.push(`${path}.expiration.date 必須是日期字串或 null。`);
     else expirationDate = expiration.date;
@@ -159,9 +178,9 @@ function parseRecord(value: unknown, index: number, errors: string[]): ProductJs
 
   const image = value.image;
   let storagePath: string | null = null;
-  if (!isObject(image) || !optionalString(image.storagePath)) {
+  if (requireField("image") && (!isObject(image) || !optionalString(image.storagePath))) {
     errors.push(`${path}.image.storagePath 必須是 Storage object path 或 null。`);
-  } else if (image.storagePath !== null) {
+  } else if (isObject(image) && typeof image.storagePath === "string") {
     storagePath = safeImageStoragePath(image.storagePath);
     if (!storagePath || storagePath !== image.storagePath || image.storagePath.includes("://")) {
       errors.push(`${path}.image.storagePath 不是有效的 object path，不可使用 URL。`);
@@ -171,23 +190,23 @@ function parseRecord(value: unknown, index: number, errors: string[]): ProductJs
   const legacy = value.legacy;
   let opened = false;
   let openedDate: string | null = null;
-  if (!isObject(legacy) || typeof legacy.opened !== "boolean" || !optionalString(legacy.openedDate)) {
+  if (requireField("legacy") && (!isObject(legacy) || typeof legacy.opened !== "boolean" || !optionalString(legacy.openedDate))) {
     errors.push(`${path}.legacy 必須包含 opened 與 openedDate。`);
-  } else {
+  } else if (isObject(legacy) && typeof legacy.opened === "boolean" && optionalString(legacy.openedDate)) {
     opened = legacy.opened;
     openedDate = legacy.openedDate;
     if (openedDate !== null && !isIsoDate(openedDate)) errors.push(`${path}.legacy.openedDate 必須為 YYYY-MM-DD 或 null。`);
   }
 
   const before = errors.length;
-  const brand = relation(value.brand, `${path}.brand`, errors);
-  const category = relation(value.category, `${path}.category`, errors);
-  const subcategory = relation(value.subcategory, `${path}.subcategory`, errors);
-  if (errors.length > before || typeof value.name !== "string") return null;
+  const brand = requireField("brand") ? relation(value.brand, `${path}.brand`, errors) : null;
+  const category = requireField("category") ? relation(value.category, `${path}.category`, errors) : null;
+  const subcategory = requireField("subcategory") ? relation(value.subcategory, `${path}.subcategory`, errors) : null;
+  if (errors.length > before || (requireField("name") && typeof value.name !== "string")) return null;
 
   return {
     id: typeof id === "string" ? id : null,
-    name: value.name.trim(),
+    name: typeof value.name === "string" ? value.name.trim() : "",
     brand,
     category,
     subcategory,
@@ -200,6 +219,7 @@ function parseRecord(value: unknown, index: number, errors: string[]): ProductJs
     legacy: { opened, openedDate },
     createdAt: typeof value.createdAt === "string" ? value.createdAt : "",
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : "",
+    providedFields,
   };
 }
 
@@ -237,7 +257,7 @@ function display(value: unknown): string {
   return String(value);
 }
 
-function compareRecord(input: ProductJsonRecord, existing: ProductWithRelations): JsonFieldDiff[] {
+function compareRecord(input: ParsedProductJsonRecord, existing: ProductWithRelations): JsonFieldDiff[] {
   const current = productToJsonRecord(existing);
   const fields: Array<[string, string, unknown, unknown]> = [
     ["name", "商品名稱", current.name, input.name],
@@ -254,7 +274,15 @@ function compareRecord(input: ProductJsonRecord, existing: ProductWithRelations)
     ["opened", "舊開封狀態", current.legacy.opened, input.legacy.opened],
     ["openedDate", "舊開封日期", current.legacy.openedDate, input.legacy.openedDate],
   ];
+  const fieldGroups: Record<string, string> = {
+    expirationType: "expiration",
+    expirationDate: "expiration",
+    imagePath: "image",
+    opened: "legacy",
+    openedDate: "legacy",
+  };
   return fields
+    .filter(([field]) => input.providedFields.has(fieldGroups[field] ?? field))
     .filter(([, , before, after]) => before !== after)
     .map(([field, label, before, after]) => ({ field, label, before: display(before), after: display(after) }));
 }
@@ -263,7 +291,7 @@ function normalized(value: string): string {
   return value.normalize("NFKC").toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, "");
 }
 
-function suggestions(input: ProductJsonRecord, existing: ProductWithRelations[]): string[] {
+function suggestions(input: ParsedProductJsonRecord, existing: ProductWithRelations[]): string[] {
   const name = normalized(input.name);
   if (!name) return [];
   return existing
@@ -279,7 +307,12 @@ function emptyCounts(): JsonPreviewResult["counts"] {
   return { new: 0, update: 0, unchanged: 0, delete: 0, conflict: 0, error: 0 };
 }
 
-export function previewProductJson(rawText: string, mode: JsonImportMode, existingProducts: ProductWithRelations[]): JsonPreviewResult {
+export function previewProductJson(
+  rawText: string,
+  mode: JsonImportMode,
+  existingProducts: ProductWithRelations[],
+  confirmedNewKeys: string[] = [],
+): JsonPreviewResult {
   const counts = emptyCounts();
   const errors: string[] = [];
   let raw: unknown;
@@ -296,12 +329,12 @@ export function previewProductJson(rawText: string, mode: JsonImportMode, existi
   if (!isObject(raw) || typeof raw.exportedAt !== "string" || !isIsoDateTime(raw.exportedAt)) errors.push("exportedAt 必須是 ISO 日期時間。");
   if (!isObject(raw) || !Array.isArray(raw.products)) errors.push("products 必須是陣列。");
 
-  const records: ProductJsonRecord[] = [];
+  const records: ParsedProductJsonRecord[] = [];
   const seenIds = new Set<string>();
   if (isObject(raw) && Array.isArray(raw.products)) {
     raw.products.forEach((value, index) => {
       const before = errors.length;
-      const record = parseRecord(value, index, errors);
+      const record = parseRecord(value, index, errors, mode);
       if (!record || errors.length > before) return;
       if (record.id && seenIds.has(record.id)) {
         errors.push(`products[${index}].id 與本次匯入中的其他商品重複。`);
@@ -317,18 +350,34 @@ export function previewProductJson(rawText: string, mode: JsonImportMode, existi
   }
 
   const existingById = new Map(existingProducts.map((product) => [product.id, product]));
+  const confirmed = new Set(confirmedNewKeys);
   const representedIds = new Set<string>();
   const items: JsonPreviewItem[] = [];
   records.forEach((record, index) => {
     const existing = record.id ? existingById.get(record.id) : undefined;
-    const suggestedMatches = suggestions(record, existingProducts).filter((name) => name !== `${existing?.name}${existing?.brand?.name ? `（${existing.brand.name}）` : ""}`);
+    const suggestedMatches = record.providedFields.has("name")
+      ? suggestions(record, existingProducts).filter((name) => name !== `${existing?.name}${existing?.brand?.name ? `（${existing.brand.name}）` : ""}`)
+      : [];
     let status: JsonPreviewStatus;
     let message: string | null = null;
     let changes: JsonFieldDiff[] = [];
+    let canConfirmAsNew = false;
+    const key = record.id ?? `missing-${index}`;
 
     if (!record.id) {
-      status = "conflict";
-      message = "缺少商品 UUID，需人工確認匹配，不會自動覆蓋。";
+      if (mode === "add" && suggestedMatches.length === 0) {
+        status = "new";
+        message = "提交時將由資料庫產生新 UUID。";
+      } else if (mode === "add" && confirmed.has(key)) {
+        status = "new";
+        message = "已確認為不同商品；提交時將產生新 UUID。";
+      } else {
+        status = "conflict";
+        canConfirmAsNew = mode === "add";
+        message = mode === "add"
+          ? "缺少商品 UUID 且找到疑似重複商品，必須人工確認為不同商品。"
+          : "缺少商品 UUID；此模式要求明確 UUID，不會自動覆蓋。";
+      }
     } else if (existing) {
       representedIds.add(existing.id);
       changes = compareRecord(record, existing);
@@ -341,14 +390,15 @@ export function previewProductJson(rawText: string, mode: JsonImportMode, existi
     } else if (mode === "update") {
       status = "conflict";
       message = "找不到此 UUID；更新模式不會以名稱自動匹配。";
-    } else if (suggestedMatches.length > 0) {
+    } else if (suggestedMatches.length > 0 && !confirmed.has(key)) {
       status = "conflict";
-      message = "UUID 不存在，但找到名稱相似的商品，需人工確認。";
+      canConfirmAsNew = mode === "add" || mode === "replace";
+      message = "UUID 不存在，但找到名稱相似的商品，需人工確認為不同商品。";
     } else {
       status = "new";
     }
     counts[status] += 1;
-    items.push({ key: record.id ?? `missing-${index}`, status, name: record.name, productId: record.id, message, suggestedMatches, changes });
+    items.push({ key, sourceIndex: index, status, name: record.name || existing?.name || "（未提供名稱）", productId: record.id, message, suggestedMatches, canConfirmAsNew, changes });
   });
 
   if (mode === "replace") {
@@ -357,11 +407,13 @@ export function previewProductJson(rawText: string, mode: JsonImportMode, existi
       counts.delete += 1;
       items.push({
         key: `delete-${product.id}`,
+        sourceIndex: null,
         status: "delete",
         name: product.name,
         productId: product.id,
         message: "取代模式將移除此商品；分類與品牌本身不會被刪除。",
         suggestedMatches: [],
+        canConfirmAsNew: false,
         changes: [],
       });
     });

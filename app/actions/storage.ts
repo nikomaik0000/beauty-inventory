@@ -9,6 +9,25 @@ export interface OrphanedImage {
   sizeBytes: number | null;
 }
 
+type InventoryClient = Awaited<ReturnType<typeof requireInventoryUser>>["supabase"];
+
+async function referencedImagePaths(supabase: InventoryClient): Promise<Set<string>> {
+  const [{ data: products, error: productsError }, { data: backupRows, error: backupError }] = await Promise.all([
+    supabase.from("products").select("image_url"),
+    supabase.rpc("inventory_referenced_image_paths"),
+  ]);
+  if (productsError) throw new Error("無法確認目前商品圖片引用，已停止圖片清理。");
+
+  const paths = new Set(
+    (products ?? []).map((p) => extractStoragePath(p.image_url)).filter((path): path is string => !!path),
+  );
+  if (backupError) {
+    throw new Error("Phase 3B 圖片引用檢查尚未可用，為保護備份圖片已停止清理。");
+  }
+  for (const row of (backupRows ?? []) as Array<{ path: string | null }>) if (row.path) paths.add(row.path);
+  return paths;
+}
+
 /** Lists every file actually in the bucket (both the current
  * `products/` folder convention and any legacy root-level files from
  * before short filenames were introduced), compares against every
@@ -18,10 +37,10 @@ export interface OrphanedImage {
 export async function findOrphanedImages(): Promise<OrphanedImage[]> {
   const { supabase } = await requireInventoryUser();
 
-  const [{ data: rootEntries }, { data: productsEntries }, { data: products }] = await Promise.all([
+  const [{ data: rootEntries }, { data: productsEntries }, referencedPaths] = await Promise.all([
     supabase.storage.from(PRODUCT_IMAGE_BUCKET).list("", { limit: 1000 }),
     supabase.storage.from(PRODUCT_IMAGE_BUCKET).list("products", { limit: 1000 }),
-    supabase.from("products").select("image_url"),
+    referencedImagePaths(supabase),
   ]);
 
   const allFiles: OrphanedImage[] = [];
@@ -39,12 +58,6 @@ export async function findOrphanedImages(): Promise<OrphanedImage[]> {
     }
   }
 
-  const referencedPaths = new Set(
-    (products ?? [])
-      .map((p) => extractStoragePath(p.image_url))
-      .filter((path): path is string => !!path),
-  );
-
   return allFiles.filter((f) => !referencedPaths.has(f.path));
 }
 
@@ -56,6 +69,10 @@ export async function findOrphanedImages(): Promise<OrphanedImage[]> {
 export async function deleteOrphanedImages(paths: string[]): Promise<{ deleted: number }> {
   const { supabase } = await requireInventoryUser();
   if (paths.length === 0) return { deleted: 0 };
+  const referencedPaths = await referencedImagePaths(supabase);
+  if (paths.some((path) => referencedPaths.has(path))) {
+    throw new Error("選取的圖片仍被商品或保留中的備份引用，未刪除任何檔案。");
+  }
   const { error } = await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove(paths);
   if (error) throw new Error(error.message);
 

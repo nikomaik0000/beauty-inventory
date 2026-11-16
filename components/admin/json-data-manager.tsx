@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Download, FileJson, FileWarning, SearchCheck, Upload } from "lucide-react";
-import { exportProductsJson, previewProductsJson } from "@/app/actions/product-json";
+import { commitProductsJsonImport, exportProductsJson, previewProductsJson } from "@/app/actions/product-json";
 import { Button } from "@/components/ui/button";
 import {
   buildExampleProductJson,
@@ -50,16 +51,25 @@ function dateStamp() {
 }
 
 export function JsonDataManager() {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const idempotencyRef = useRef<{ token: string; key: string } | null>(null);
   const [rawText, setRawText] = useState("");
   const [mode, setMode] = useState<JsonImportMode>("add");
   const [preview, setPreview] = useState<JsonPreviewResult | null>(null);
+  const [confirmedNewKeys, setConfirmedNewKeys] = useState<string[]>([]);
+  const [confirmationText, setConfirmationText] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"export" | "preview" | null>(null);
+  const [busy, setBusy] = useState<"export" | "preview" | "commit" | null>(null);
 
   function resetPreview(nextText = rawText) {
     setRawText(nextText);
     setPreview(null);
+    setConfirmedNewKeys([]);
+    setConfirmationText("");
+    setSuccessMessage(null);
+    idempotencyRef.current = null;
     setMessage(null);
   }
 
@@ -89,7 +99,7 @@ export function JsonDataManager() {
     }
   }
 
-  async function handlePreview() {
+  async function runPreview(confirmations = confirmedNewKeys) {
     if (!rawText.trim()) {
       setMessage("請貼上 JSON 或選擇檔案。");
       return;
@@ -97,10 +107,53 @@ export function JsonDataManager() {
     setBusy("preview");
     setMessage(null);
     try {
-      const result = await previewProductsJson(rawText, mode);
+      const result = await previewProductsJson(rawText, mode, confirmations);
       setPreview(result);
+      idempotencyRef.current = null;
     } catch {
       setMessage("預覽失敗，請確認登入狀態或稍後再試。");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleConfirmAsNew(key: string) {
+    const next = [...new Set([...confirmedNewKeys, key])];
+    setConfirmedNewKeys(next);
+    await runPreview(next);
+  }
+
+  async function handleCommit() {
+    if (!preview) return;
+    const execution = preview?.execution;
+    if (!execution?.enabled || !execution.previewToken) return;
+    const requiredText = mode === "replace" ? `REPLACE ${preview.counts.delete}` : "";
+    if (requiredText && confirmationText !== requiredText) {
+      setMessage(`請輸入「${requiredText}」確認取代。`);
+      return;
+    }
+    setBusy("commit");
+    setMessage(null);
+    try {
+      if (!idempotencyRef.current || idempotencyRef.current.token !== execution.previewToken) {
+        idempotencyRef.current = { token: execution.previewToken, key: crypto.randomUUID() };
+      }
+      const result = await commitProductsJsonImport(
+        execution.previewToken,
+        idempotencyRef.current.key,
+        confirmationText,
+      );
+      setSuccessMessage(
+        `${result.status === "already-applied" ? "此批次先前已完成" : "匯入完成"}：新增 ${result.created}、更新 ${result.updated}、刪除 ${result.deleted}。`,
+      );
+      setPreview(null);
+      setRawText("");
+      setConfirmedNewKeys([]);
+      setConfirmationText("");
+      idempotencyRef.current = null;
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "匯入失敗，未套用任何變更。");
     } finally {
       setBusy(null);
     }
@@ -132,7 +185,7 @@ export function JsonDataManager() {
 
       <div className="border-t border-divider pt-5">
         <h3 className="text-sm font-medium text-textPrimary">匯入差異預覽</h3>
-        <p className="mt-1 text-xs text-textMuted">Phase 3A 只產生預覽，不會新增、更新或刪除任何資料。</p>
+        <p className="mt-1 text-xs text-textMuted">提交前會由伺服器與資料庫再次驗證；RPC 未安裝時只允許預覽。</p>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-3">
@@ -143,6 +196,9 @@ export function JsonDataManager() {
             onClick={() => {
               setMode(option.value);
               setPreview(null);
+              setConfirmedNewKeys([]);
+              setConfirmationText("");
+              idempotencyRef.current = null;
             }}
             className={cn(
               "min-h-20 rounded-input border p-3 text-left transition-colors",
@@ -179,7 +235,7 @@ export function JsonDataManager() {
             <Upload size={14} strokeWidth={1.75} />
             選擇 JSON 檔案
           </Button>
-          <Button type="button" size="sm" onClick={() => void handlePreview()} disabled={busy !== null || !rawText.trim()}>
+          <Button type="button" size="sm" onClick={() => void runPreview()} disabled={busy !== null || !rawText.trim()}>
             <SearchCheck size={14} strokeWidth={1.75} />
             {busy === "preview" ? "分析中…" : "產生差異預覽"}
           </Button>
@@ -188,6 +244,7 @@ export function JsonDataManager() {
       </div>
 
       {message && <InlineError message={message} />}
+      {successMessage && <p className="rounded-input border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{successMessage}</p>}
       {preview && !preview.valid && (
         <div className="space-y-2">
           <InlineError message="JSON 格式無效，未建立有效預覽。" />
@@ -196,7 +253,16 @@ export function JsonDataManager() {
           </ul>
         </div>
       )}
-      {preview?.valid && <Preview result={preview} />}
+      {preview?.valid && (
+        <Preview
+          result={preview}
+          busy={busy !== null}
+          confirmationText={confirmationText}
+          onConfirmationTextChange={setConfirmationText}
+          onConfirmAsNew={(key) => void handleConfirmAsNew(key)}
+          onCommit={() => void handleCommit()}
+        />
+      )}
     </section>
   );
 }
@@ -210,7 +276,21 @@ function InlineError({ message }: { message: string }) {
   );
 }
 
-function Preview({ result }: { result: JsonPreviewResult }) {
+function Preview({
+  result,
+  busy,
+  confirmationText,
+  onConfirmationTextChange,
+  onConfirmAsNew,
+  onCommit,
+}: {
+  result: JsonPreviewResult;
+  busy: boolean;
+  confirmationText: string;
+  onConfirmationTextChange: (value: string) => void;
+  onConfirmAsNew: (key: string) => void;
+  onCommit: () => void;
+}) {
   const order: Array<JsonPreviewStatus | "error"> = ["new", "update", "unchanged", "delete", "conflict", "error"];
   return (
     <div className="space-y-4 border-t border-divider pt-5">
@@ -232,13 +312,44 @@ function Preview({ result }: { result: JsonPreviewResult }) {
       <div className="space-y-2">
         {result.items.length === 0 ? (
           <p className="rounded-input border border-border p-4 text-center text-sm text-textMuted">JSON 中沒有商品差異。</p>
-        ) : result.items.map((item) => <PreviewItem key={item.key} item={item} />)}
+        ) : result.items.map((item) => <PreviewItem key={item.key} item={item} busy={busy} onConfirmAsNew={onConfirmAsNew} />)}
+      </div>
+
+      <div className="space-y-3 rounded-input border border-border bg-surfaceMuted/35 p-3 sm:p-4">
+        {result.mode === "replace" && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-danger">取代會移除 {result.counts.delete} 筆未出現在 JSON 的商品；Storage 圖片不會立即刪除。</p>
+            <label className="block text-xs text-textSecondary">
+              請輸入 <span className="font-mono font-semibold">REPLACE {result.counts.delete}</span>
+              <input
+                value={confirmationText}
+                onChange={(event) => onConfirmationTextChange(event.target.value)}
+                className="mt-1.5 h-10 w-full rounded-input border border-border bg-surface px-3 font-mono text-sm outline-none focus:border-accent"
+              />
+            </label>
+          </div>
+        )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-5 text-textMuted">
+            {result.execution?.enabled
+              ? `提交憑證有效至 ${result.execution.expiresAt ? new Date(result.execution.expiresAt).toLocaleString("zh-TW") : "短時間內"}。`
+              : result.execution?.reason ?? "尚未建立可提交的預覽憑證。"}
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onCommit}
+            disabled={busy || !result.execution?.enabled || (result.mode === "replace" && confirmationText !== `REPLACE ${result.counts.delete}`)}
+          >
+            {busy ? "處理中…" : "確認匯入"}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
-function PreviewItem({ item }: { item: JsonPreviewItem }) {
+function PreviewItem({ item, busy, onConfirmAsNew }: { item: JsonPreviewItem; busy: boolean; onConfirmAsNew: (key: string) => void }) {
   return (
     <details className="group rounded-input border border-border bg-background open:bg-surface">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-3 text-sm">
@@ -250,6 +361,11 @@ function PreviewItem({ item }: { item: JsonPreviewItem }) {
         {item.message && <p className="text-xs leading-5 text-textSecondary">{item.message}</p>}
         {item.suggestedMatches.length > 0 && (
           <p className="text-xs leading-5 text-textSecondary">人工匹配提示：{item.suggestedMatches.join("、")}</p>
+        )}
+        {item.canConfirmAsNew && (
+          <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => onConfirmAsNew(item.key)}>
+            確認為不同商品並重新預覽
+          </Button>
         )}
         {item.changes.length > 0 ? (
           <div className="overflow-x-auto">

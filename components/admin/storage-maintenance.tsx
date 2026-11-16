@@ -64,7 +64,7 @@ export function StorageMaintenance() {
     <Card className="p-6">
       <h2 className="text-sm font-semibold text-textPrimary">儲存空間維護</h2>
       <p className="mt-1 text-xs text-textMuted">
-        掃描圖片儲存空間，找出沒有被任何商品使用的圖片（例如上傳後未儲存商品所留下的檔案），並可將其清除。
+        掃描圖片儲存空間，找出沒有被商品或保留快照引用的圖片；Phase 3B 引用檢查不可用時會安全停止。
       </p>
 
       <div className="mt-4">
