@@ -33,10 +33,10 @@ export function SimpleEntityList({
       {items.map((item) => (
         <li
           key={item.id}
-          className="min-w-0 overflow-hidden rounded-card border border-border bg-surface shadow-card sm:overflow-visible"
+          className="min-w-0"
         >
           {editingId === item.id ? (
-            <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
+            <div className="flex min-h-14 items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-2.5 shadow-card">
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -82,7 +82,8 @@ export function SimpleEntityList({
                 if (!confirm(`確定要刪除「${item.name}」嗎？使用中的商品會保留其他資料。`)) return;
                 startTransition(() => onDelete(item.id));
               }}
-              contentClassName="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5"
+              className="overflow-hidden rounded-card border border-border bg-surface shadow-card sm:overflow-hidden"
+              contentClassName="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5 sm:rounded-card"
             >
               <span className="min-w-0 truncate text-sm text-textPrimary">{item.name}</span>
               <div className="hidden shrink-0 items-center gap-1 sm:flex">

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Copy, Pencil, Trash2 } from "lucide-react";
 import { deleteProduct } from "@/app/actions/products";
 import type { ProductWithRelations } from "@/lib/types";
+import { openProductForm } from "@/lib/product-form-events";
 
 export function ProductSwipeActions({
   product,
@@ -23,7 +24,7 @@ export function ProductSwipeActions({
 
   function handleEdit() {
     onComplete();
-    router.push(`/admin/products/${product.id}/edit`);
+    openProductForm({ mode: "edit", productId: product.id });
   }
 
   function handleDelete() {
@@ -44,7 +45,7 @@ export function ProductSwipeActions({
 
   function handleDuplicate() {
     onComplete();
-    router.push(`/admin/products/new?duplicate=${encodeURIComponent(product.id)}`);
+    openProductForm({ mode: "duplicate", productId: product.id });
   }
 
   return (

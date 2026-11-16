@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, type Ref, useEffect, useLayoutEffect } from "react";
+import { type ReactNode, type Ref, useEffect, useLayoutEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,9 @@ export function Dialog({
   maxWidthClassName = "max-w-sm",
   maxHeightClassName = "max-h-[80vh]",
   viewportPaddingClassName = "p-4",
-  backdropClassName = "bg-textPrimary/30",
+  backdropClassName = "bg-black/50",
+  frameClassName: customFrameClassName,
+  bodyClassName,
   animated = true,
   contentRef,
 }: {
@@ -35,12 +37,16 @@ export function Dialog({
   maxHeightClassName?: string;
   viewportPaddingClassName?: string;
   backdropClassName?: string;
+  frameClassName?: string;
+  bodyClassName?: string;
   animated?: boolean;
   /** Ref to the scrollable body — lets a caller (e.g. FilterPanel) use
    * it as a boundary so its own dropdowns never render past the
    * footer. Optional; nothing changes for callers that don't pass it. */
   contentRef?: Ref<HTMLDivElement>;
 }) {
+  const dialogId = useRef(Symbol("dialog"));
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const reduceMotion = useReducedMotion();
   const fadeTransition = {
     duration: reduceMotion ? 0 : animation.motion.base,
@@ -54,43 +60,38 @@ export function Dialog({
   // separate key presses.
   useEffect(() => {
     if (!open) return;
+    const currentDialogId = dialogId.current;
+    dialogStack.push(currentDialogId);
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && dialogStack.at(-1) === currentDialogId) onClose();
     }
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      const index = dialogStack.lastIndexOf(currentDialogId);
+      if (index >= 0) dialogStack.splice(index, 1);
+    };
   }, [open, onClose]);
 
   useLayoutEffect(() => {
     if (!open) return;
-    const scrollY = window.scrollY;
-    const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-    const bodyPaddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
-    const previous = {
-      overflow: document.body.style.overflow,
-      position: document.body.style.position,
-      top: document.body.style.top,
-      width: document.body.style.width,
-      paddingRight: document.body.style.paddingRight,
-    };
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-    document.body.style.paddingRight = `${bodyPaddingRight + scrollbarWidth}px`;
+    lockBodyScroll();
+    return unlockBodyScroll;
+  }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus({ preventScroll: true });
     return () => {
-      document.body.style.overflow = previous.overflow;
-      document.body.style.position = previous.position;
-      document.body.style.top = previous.top;
-      document.body.style.width = previous.width;
-      document.body.style.paddingRight = previous.paddingRight;
-      window.scrollTo(0, scrollY);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus({ preventScroll: true });
     };
   }, [open]);
 
   const frameClassName = cn(
     "fixed inset-0 z-40 flex items-center justify-center",
     viewportPaddingClassName,
+    customFrameClassName,
   );
   const backdropClass = cn("absolute inset-0", backdropClassName);
   const panelClassName = cn(
@@ -105,6 +106,7 @@ export function Dialog({
           {title}
         </h3>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           aria-label={`關閉${title}`}
@@ -114,7 +116,7 @@ export function Dialog({
         </button>
       </div>
 
-      <div ref={contentRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+      <div ref={contentRef} className={cn("min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4", bodyClassName)}>
         {children}
       </div>
 
@@ -174,4 +176,41 @@ export function Dialog({
       )}
     </AnimatePresence>
   );
+}
+
+let bodyLockCount = 0;
+const dialogStack: symbol[] = [];
+let bodyLockScrollY = 0;
+let bodyLockPrevious: Record<string, string> | null = null;
+
+function lockBodyScroll() {
+  bodyLockCount += 1;
+  if (bodyLockCount > 1) return;
+  bodyLockScrollY = window.scrollY;
+  bodyLockPrevious = {
+    overflow: document.body.style.overflow,
+    position: document.body.style.position,
+    top: document.body.style.top,
+    width: document.body.style.width,
+    paddingRight: document.body.style.paddingRight,
+  };
+  const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+  const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+  document.body.style.overflow = "hidden";
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${bodyLockScrollY}px`;
+  document.body.style.width = "100%";
+  document.body.style.paddingRight = `${paddingRight + scrollbarWidth}px`;
+}
+
+function unlockBodyScroll() {
+  bodyLockCount = Math.max(0, bodyLockCount - 1);
+  if (bodyLockCount > 0 || !bodyLockPrevious) return;
+  document.body.style.overflow = bodyLockPrevious.overflow;
+  document.body.style.position = bodyLockPrevious.position;
+  document.body.style.top = bodyLockPrevious.top;
+  document.body.style.width = bodyLockPrevious.width;
+  document.body.style.paddingRight = bodyLockPrevious.paddingRight;
+  bodyLockPrevious = null;
+  window.scrollTo(0, bodyLockScrollY);
 }

@@ -6,13 +6,16 @@ async function source(path) {
   return readFile(new URL(path, import.meta.url), "utf8");
 }
 
-test("product detail uses a centered safe-area modal with a dark viewport backdrop", async () => {
-  const detail = await source("../components/product-detail-dialog.tsx");
+test("product detail uses a centered safe-area modal with the shared 50% viewport backdrop", async () => {
+  const [detail, dialog] = await Promise.all([
+    source("../components/product-detail-dialog.tsx"),
+    source("../components/ui/dialog.tsx"),
+  ]);
 
   assert.match(detail, /max-h-\[85dvh\]/);
   assert.match(detail, /safe-area-inset-top/);
   assert.match(detail, /safe-area-inset-bottom/);
-  assert.match(detail, /bg-black\/80/);
+  assert.match(dialog, /bg-black\/50/);
   assert.match(detail, /animated=\{false\}/);
   assert.doesNotMatch(detail, /mobileNearFullscreen/);
 });
@@ -28,7 +31,9 @@ test("dialog keeps header and footer outside its scrollable content and restores
   assert.match(dialog, /useLayoutEffect/);
   assert.match(dialog, /scrollbarWidth/);
   assert.match(dialog, /paddingRight/);
-  assert.match(dialog, /window\.scrollTo\(0, scrollY\)/);
+  assert.match(dialog, /window\.scrollTo\(0, bodyLockScrollY\)/);
+  assert.match(dialog, /bodyLockCount/);
+  assert.match(dialog, /previouslyFocused\.focus\(\{ preventScroll: true \}\)/);
 });
 
 test("dialog uses a coordinated opacity-only fade and respects reduced motion", async () => {

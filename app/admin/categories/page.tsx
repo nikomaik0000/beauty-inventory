@@ -68,10 +68,7 @@ export default function CategoriesAdminPage() {
 
   return (
     <div className="w-full min-w-0">
-      <h1 className="mb-1 text-xl font-semibold text-textPrimary">分類</h1>
-      <p className="mb-6 text-sm text-textMuted">
-        大分類與小分類完全自訂 — 依您的收藏需求新增任意數量。
-      </p>
+      <h1 className="mb-5 text-xl font-semibold text-textPrimary">分類</h1>
 
       <AddEntityForm
         placeholder="新的大分類名稱（例如：彩妝）"
@@ -81,9 +78,9 @@ export default function CategoriesAdminPage() {
         }}
       />
 
-      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         {categories.map((category) => (
-          <div key={category.id} className="rounded-card border border-border bg-surface p-4 shadow-card">
+          <div key={category.id} className="overflow-hidden rounded-card border border-border bg-surface p-6 shadow-card">
             {editingCategoryId === category.id ? (
               <div className="flex min-h-11 items-center justify-between gap-2 sm:min-h-0">
                 <div className="flex flex-1 items-center gap-2">
@@ -151,11 +148,17 @@ export default function CategoriesAdminPage() {
               </MobileSwipeActionRow>
             )}
 
-            <ul className="mt-3 space-y-1">
+            <div className="mt-5 grid grid-cols-[minmax(0,1fr)_3.25rem_5rem] items-center gap-x-2 border-b border-divider px-2.5 pb-2 text-xs font-medium tracking-[0.5px] text-textMuted sm:grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.25rem] sm:gap-x-4">
+              <span>分類</span>
+              <span className="text-right">商品</span>
+              <span className="text-right">容量</span>
+              <span aria-hidden="true" className="hidden sm:block" />
+            </div>
+            <ul>
               {subcategories
                 .filter((s) => s.category_id === category.id)
                 .map((sub) => (
-                  <li key={sub.id} className="overflow-hidden rounded-input text-sm">
+                  <li key={sub.id} className="overflow-hidden border-b border-divider text-sm last:border-b-0">
                     {editingSubId === sub.id ? (
                       <div className="flex min-h-11 flex-1 items-center gap-2 px-2.5 py-1.5 sm:min-h-0">
                         <Input value={subDraft} onChange={(e) => setSubDraft(e.target.value)} className="h-7" autoFocus />
@@ -190,17 +193,12 @@ export default function CategoriesAdminPage() {
                           await deleteSubcategory(sub.id);
                           await refresh();
                         }}
-                        contentClassName="flex min-h-11 items-center justify-between px-2.5 py-1.5 hover:bg-surfaceMuted sm:min-h-0"
+                        contentClassName="grid min-h-14 grid-cols-[minmax(0,1fr)_3.25rem_5rem] items-center gap-x-2 px-2.5 hover:bg-surfaceMuted sm:min-h-[60px] sm:grid-cols-[minmax(0,1fr)_4.5rem_5.5rem_5.25rem] sm:gap-x-4"
                       >
-                        <span className="min-w-0 text-textSecondary">
-                          {sub.name}
-                          <span className="ml-2 text-xs text-textMuted">
-                            {summaryBySubcategory[sub.id]?.count ?? 0} 件商品
-                            {formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0) &&
-                              ` · ${formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0)}`}
-                          </span>
-                        </span>
-                        <div className="hidden items-center gap-1 sm:flex">
+                        <span className="min-w-0 truncate tracking-[0.5px] text-textSecondary">{sub.name}</span>
+                        <span className="text-right text-xs font-medium tabular-nums text-textMuted">{summaryBySubcategory[sub.id]?.count ?? 0}</span>
+                        <span className="text-right text-xs font-medium tabular-nums text-textMuted">{formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0) || "—"}</span>
+                        <div className="hidden items-center justify-end gap-1 sm:flex">
                           <button
                             type="button"
                             aria-label={`重新命名 ${sub.name}`}
@@ -231,7 +229,7 @@ export default function CategoriesAdminPage() {
                 ))}
             </ul>
 
-            <div className="mt-2 flex gap-2">
+            <div className="mt-5 flex gap-2">
               <Input
                 value={newSubName[category.id] ?? ""}
                 onChange={(e) => setNewSubName((prev) => ({ ...prev, [category.id]: e.target.value }))}

@@ -9,6 +9,8 @@ import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/inpu
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { createProduct, updateProduct } from "@/app/actions/products";
+import { optimizeImageForUpload } from "@/lib/image-optimize";
+import { uploadProductImage } from "@/lib/product-images";
 import type { Category, ProductWithRelations, Subcategory } from "@/lib/types";
 
 export function ProductForm({
@@ -16,16 +18,23 @@ export function ProductForm({
   subcategories,
   product,
   initialProduct,
+  modal = false,
+  onCancel,
+  onDirtyChange,
 }: {
   categories: Category[];
   subcategories: Subcategory[];
   product?: ProductWithRelations;
   initialProduct?: ProductWithRelations;
+  modal?: boolean;
+  onCancel?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
   const bypassWarningRef = useRef(false);
   const sourceProduct = product ?? initialProduct;
 
@@ -72,7 +81,11 @@ export function ProductForm({
   const visibleSubcategories = subcategories.filter((s) => s.category_id === selectedCategoryId);
 
   useEffect(() => {
-    if (!isDirty) return;
+    onDirtyChange?.(isDirty || Boolean(pendingImage));
+  }, [isDirty, onDirtyChange, pendingImage]);
+
+  useEffect(() => {
+    if (!isDirty && !pendingImage) return;
 
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (bypassWarningRef.current) return;
@@ -98,7 +111,7 @@ export function ProductForm({
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", interceptLinks, true);
     };
-  }, [isDirty]);
+  }, [isDirty, pendingImage]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -120,10 +133,15 @@ export function ProductForm({
     startTransition(async () => {
       try {
         bypassWarningRef.current = true;
+        const submittedValues = { ...values };
+        if (pendingImage) {
+          const optimized = await optimizeImageForUpload(pendingImage);
+          submittedValues.image_url = await uploadProductImage(optimized);
+        }
         if (product) {
-          await updateProduct(product.id, values);
+          await updateProduct(product.id, submittedValues);
         } else {
-          await createProduct(values);
+          await createProduct(submittedValues);
         }
       } catch (err) {
         bypassWarningRef.current = false;
@@ -142,9 +160,10 @@ export function ProductForm({
         const target = event.target as HTMLElement;
         window.setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 180);
       }}
-      className="space-y-6 pb-28 sm:pb-0"
-      style={{ paddingBottom: keyboardInset > 0 ? `calc(7rem + ${keyboardInset}px)` : undefined }}
+      className={modal ? "flex min-h-0 flex-1 flex-col" : "space-y-6 pb-28 sm:pb-0"}
+      style={!modal && keyboardInset > 0 ? { paddingBottom: `calc(7rem + ${keyboardInset}px)` } : undefined}
     >
+      <div className={modal ? "min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6" : "contents"}>
       {serverError && (
         <div className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
           {serverError}
@@ -156,7 +175,7 @@ export function ProductForm({
         <Controller
           control={control}
           name="image_url"
-          render={({ field }) => <ImageUploader value={field.value ?? ""} onChange={field.onChange} />}
+          render={({ field }) => <ImageUploader value={field.value ?? ""} file={pendingImage} onChange={field.onChange} onFileChange={setPendingImage} />}
         />
       </div>
 
@@ -256,6 +275,7 @@ export function ProductForm({
         <Label htmlFor="notes">備註</Label>
         <Textarea id="notes" {...register("notes")} placeholder="任何值得記錄的小筆記…" />
       </div>
+      </div>
 
       {/* Mobile: fixed to the viewport bottom (not `sticky`, so it's
           edge-to-edge regardless of this form's own max-width/padding
@@ -263,23 +283,24 @@ export function ProductForm({
           indicators. Desktop (sm:+) reverts to the original static
           inline row — no border, no background, no fixed positioning. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-2"
-        style={{ bottom: keyboardInset > 0 ? keyboardInset : undefined }}
+        className={modal ? "flex shrink-0 items-center justify-end gap-2.5 border-t border-divider bg-surface px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:py-4" : "fixed inset-x-0 bottom-0 z-40 flex items-center gap-2.5 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:z-auto sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-2"}
+        style={!modal && keyboardInset > 0 ? { bottom: keyboardInset } : undefined}
       >
-        <Button type="submit" disabled={pending} className="flex-1 justify-center sm:flex-none">
-          {pending ? "儲存中…" : product ? "儲存變更" : "新增商品"}
-        </Button>
         <Button
           type="button"
           variant="secondary"
           onClick={() => {
-            if (isDirty && !confirm("尚有未儲存的變更，確定要離開嗎？")) return;
+            if (!onCancel && (isDirty || pendingImage) && !confirm("尚有未儲存的變更，確定要離開嗎？")) return;
             bypassWarningRef.current = true;
-            router.push("/");
+            if (onCancel) onCancel();
+            else router.push("/");
           }}
           className="flex-1 justify-center sm:flex-none"
         >
           取消
+        </Button>
+        <Button type="submit" disabled={pending} className="flex-1 justify-center sm:flex-none">
+          {pending ? (pendingImage ? "處理圖片中…" : "儲存中…") : product ? "儲存變更" : "新增商品"}
         </Button>
       </div>
     </form>

@@ -92,6 +92,7 @@
 
 html {
   color-scheme: light;
+  scrollbar-gutter: stable;
   /* Never allow horizontal scroll at the document level */
   overflow-x: hidden;
 }
@@ -106,8 +107,12 @@ body {
 }
 
 h1, h2, h3 {
-  letter-spacing: var(--text-heading-letter-spacing);
+  letter-spacing: 0.5px;
   line-height: var(--text-heading-line-height);
+}
+
+h1 {
+  letter-spacing: 1px;
 }
 
 p {

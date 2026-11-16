@@ -83,6 +83,16 @@ test("taxonomy pages use responsive desktop grids without narrow fixed wrappers"
   assert.match(categories, /category:\$\{category\.id\}/);
   assert.match(categories, /subcategory:\$\{sub\.id\}/);
   assert.match(entityList, /brand:\$\{item\.id\}/);
+  assert.match(entityList, /overflow-hidden rounded-card border border-border bg-surface shadow-card sm:overflow-hidden/);
+  assert.match(entityList, /sm:rounded-card/);
+  assert.match(categories, />分類<\/span>/);
+  assert.match(categories, />商品<\/span>/);
+  assert.match(categories, />容量<\/span>/);
+  assert.doesNotMatch(categories, />操作<\/span>/);
+  assert.match(categories, /sm:gap-x-4/);
+  assert.match(categories, /sm:grid-cols-\[minmax\(0,1fr\)_4\.5rem_5\.5rem_5\.25rem\]/);
+  assert.match(categories, /text-right text-xs font-medium tabular-nums text-textMuted/);
+  assert.match(await source("../components/admin/add-entity-form.tsx"), /className="mb-8"/);
   assert.match(swipeRow, /absX > absY \* 1\.2/);
   assert.match(swipeRow, /absY > absX \* 1\.2/);
   assert.match(swipeRow, /ACTION_WIDTH = 144/);
@@ -109,6 +119,8 @@ test("product homepage is card-only and keeps the desktop action menu in the exp
   assert.match(search, /aria-label="搜尋商品"/);
   assert.doesNotMatch(search, /placeholder="搜尋商品/);
   assert.match(header, /divide-x divide-divider/);
+  assert.match(header, /tracking-\[1\.5px\]/);
+  assert.match(header, /px-6 py-1/);
   assert.doesNotMatch(header, /bg-accentSoft text-accentStrong/);
   assert.match(header, /aria-label="新增商品"/);
   assert.match(header, /rounded-full/);

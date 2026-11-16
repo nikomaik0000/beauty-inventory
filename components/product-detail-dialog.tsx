@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Calendar, Pencil } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { protectedProductImageUrl } from "@/lib/product-image-path";
 import { formatCapacity, formatExpirationCompact, initials } from "@/lib/utils";
 import { categoryAccent, productImageSize } from "@/lib/theme";
 import type { ProductWithRelations } from "@/lib/types";
+import { openProductForm } from "@/lib/product-form-events";
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -41,20 +41,20 @@ export function ProductDetailDialog({
       maxWidthClassName="max-w-lg"
       maxHeightClassName="max-h-[85dvh]"
       viewportPaddingClassName="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
-      backdropClassName="bg-black/80"
       animated={false}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
           <ProductActionsMenu product={product} onDeleted={onClose} />
           <div className="flex items-center gap-2">
             <Button type="button" variant="secondary" size="sm" onClick={onClose}>關閉</Button>
-            <Link
-              href={`/admin/products/${product.id}/edit`}
+            <button
+              type="button"
+              onClick={() => openProductForm({ mode: "edit", productId: product.id })}
               className="inline-flex h-8 items-center gap-1.5 rounded-button border border-border bg-divider px-3.5 text-sm font-medium text-textPrimary"
             >
               <Pencil size={14} strokeWidth={1.75} />
               編輯
-            </Link>
+            </button>
           </div>
         </div>
       }

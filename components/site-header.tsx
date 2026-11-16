@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { openProductForm } from "@/lib/product-form-events";
 
 const navigation = [
   { href: "/", label: "商品" },
@@ -17,12 +19,13 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-export function SiteHeader() {
+export function SiteHeader({ onAddProduct }: { onAddProduct?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <header className="border-b border-divider bg-surface/70 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-5 px-4 py-4 sm:px-6">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-5 px-4 py-4 sm:px-8">
         <Link href="/" className="flex min-w-0 items-center gap-2">
           <div className="min-w-0 leading-tight">
             <p className="truncate text-base font-semibold text-textPrimary">Beauty Inventory</p>
@@ -40,7 +43,7 @@ export function SiteHeader() {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "px-4 py-1 text-sm font-medium transition-colors first:pl-0 last:pr-0",
+                    "px-6 py-1 text-sm font-medium tracking-[1.5px] transition-colors",
                     active
                       ? "text-accentStrong"
                       : "text-textSecondary hover:text-textPrimary",
@@ -52,14 +55,19 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <Link
-            href="/admin/products/new"
+          <button
+            type="button"
+            onClick={() => {
+              if (onAddProduct) onAddProduct();
+              else if (pathname === "/") openProductForm({ mode: "new" });
+              else router.push("/?productForm=new");
+            }}
             aria-label="新增商品"
             title="新增商品"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-textSecondary transition-colors hover:bg-surfaceMuted hover:text-textPrimary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accentSoft"
           >
             <Plus size={15} strokeWidth={1.6} />
-          </Link>
+          </button>
         </div>
       </div>
     </header>

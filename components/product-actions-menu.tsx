@@ -7,6 +7,7 @@ import { deleteProduct } from "@/app/actions/products";
 import { Dropdown } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
 import type { ProductWithRelations } from "@/lib/types";
+import { openProductForm } from "@/lib/product-form-events";
 
 type ProductAction = "edit" | "duplicate" | "delete";
 
@@ -25,11 +26,11 @@ export function ProductActionsMenu({
 
   function handleAction(action: ProductAction) {
     if (action === "edit") {
-      router.push(`/admin/products/${product.id}/edit`);
+      openProductForm({ mode: "edit", productId: product.id });
       return;
     }
     if (action === "duplicate") {
-      router.push(`/admin/products/new?duplicate=${encodeURIComponent(product.id)}`);
+      openProductForm({ mode: "duplicate", productId: product.id });
       return;
     }
     if (!confirm(`確定要刪除「${product.name}」嗎？此操作無法復原。`)) return;

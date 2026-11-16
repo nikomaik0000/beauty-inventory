@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-7 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl overflow-x-hidden px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-7 sm:px-8 sm:py-8">
         <ProductExplorer
           products={products}
           categories={categories}

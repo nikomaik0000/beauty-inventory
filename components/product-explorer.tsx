@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
@@ -9,9 +9,11 @@ import { FilterPanel } from "@/components/filter-panel";
 import { SortMenu } from "@/components/sort-menu";
 import { ProductCardGrid } from "@/components/product-card-grid";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
+import { ProductFormDialog } from "@/components/admin/product-form-dialog";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { daysUntil, isExpiringSoon, volumeContribution } from "@/lib/utils";
 import { defaultFilters } from "@/lib/types";
+import { openProductForm, PRODUCT_FORM_OPEN_EVENT, type ProductFormRequest } from "@/lib/product-form-events";
 import type {
   Brand,
   Category,
@@ -41,6 +43,24 @@ export function ProductExplorer({
   const [filters, setFilters] = useState<ProductFilters>(defaultFilters);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [openSwipeProductId, setOpenSwipeProductId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const productFormParam = searchParams.get("productForm");
+  const [productForm, setProductForm] = useState<ProductFormRequest | null>(() => parseProductFormParam(productFormParam));
+  const formProduct = productForm && productForm.mode !== "new"
+    ? products.find((item) => item.id === productForm.productId)
+    : undefined;
+  const formOpen = productForm?.mode === "new" || Boolean(formProduct);
+
+  useEffect(() => {
+    const handleOpen = (event: Event) => setProductForm((event as CustomEvent<ProductFormRequest>).detail);
+    window.addEventListener(PRODUCT_FORM_OPEN_EVENT, handleOpen);
+    return () => window.removeEventListener(PRODUCT_FORM_OPEN_EVENT, handleOpen);
+  }, []);
+
+  useEffect(() => {
+    if (!productFormParam) return;
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+  }, [productFormParam]);
 
   useEffect(() => {
     if (!openSwipeProductId) return;
@@ -172,19 +192,35 @@ export function ProductExplorer({
         </div>
       )}
 
-      <Link
-        href="/admin/products/new"
+      <button
+        type="button"
+        onClick={() => openProductForm({ mode: "new" })}
         aria-label="新增商品"
         className="fixed bottom-[calc(5.2rem+env(safe-area-inset-bottom))] right-4 z-20 flex h-14 w-14 items-center justify-center rounded-button border border-border bg-surface text-accentStrong shadow-dialog sm:hidden"
       >
         <Plus size={24} strokeWidth={1.75} />
-      </Link>
+      </button>
 
       <ProductDetailDialog
         product={selectedProduct}
         open={!!selectedProduct}
         onClose={() => setSelectedProductId(null)}
       />
+      <ProductFormDialog
+        open={formOpen}
+        mode={productForm?.mode ?? "new"}
+        product={formProduct}
+        categories={categories}
+        subcategories={subcategories}
+        onClose={() => setProductForm(null)}
+      />
     </div>
   );
+}
+
+function parseProductFormParam(param: string | null): ProductFormRequest | null {
+  if (param === "new") return { mode: "new" };
+  if (param?.startsWith("edit:") && param.slice(5)) return { mode: "edit", productId: param.slice(5) };
+  if (param?.startsWith("duplicate:") && param.slice(10)) return { mode: "duplicate", productId: param.slice(10) };
+  return null;
 }

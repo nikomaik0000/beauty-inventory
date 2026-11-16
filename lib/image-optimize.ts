@@ -80,3 +80,42 @@ export async function optimizeImageForUpload(
     bitmap.close?.();
   }
 }
+
+export type ImageCrop = { x: number; y: number; width: number; height: number };
+
+/** Creates an editable crop without uploading it. Final 800px WebP
+ * optimization still happens through optimizeImageForUpload on save. */
+export async function cropImageFile(file: File, crop: ImageCrop): Promise<File> {
+  validateImageFile(file);
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new ImageProcessingError("無法讀取這張圖片，檔案可能已損壞或格式不支援。");
+  }
+  try {
+    const x = Math.max(0, Math.min(crop.x, bitmap.width - 1));
+    const y = Math.max(0, Math.min(crop.y, bitmap.height - 1));
+    const width = Math.max(1, Math.min(crop.width, bitmap.width - x));
+    const height = Math.max(1, Math.min(crop.height, bitmap.height - y));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(height));
+    const context = canvas.getContext("2d");
+    if (!context) throw new ImageProcessingError("這個瀏覽器不支援圖片處理功能，請改用其他瀏覽器。");
+    context.drawImage(bitmap, x, y, width, height, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => result ? resolve(result) : reject(new ImageProcessingError("圖片裁切失敗，請再試一次。")),
+        "image/webp",
+        0.92,
+      );
+    });
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "product"}-cropped.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  } finally {
+    bitmap.close?.();
+  }
+}

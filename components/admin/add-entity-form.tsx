@@ -31,7 +31,7 @@ export function AddEntityForm({
   }
 
   return (
-    <div className="mb-3">
+    <div className="mb-8">
       <div className="flex gap-2">
         <Input
           value={value}
