@@ -171,6 +171,8 @@ grant execute on function test_support.assert_true(boolean,text), test_support.e
 -- committed only inside this disposable cluster instead of its safe-default rollback.
 alter table public.products add constraint products_quantity_nonnegative check (quantity >= 0) not valid;
 alter table public.products validate constraint products_quantity_nonnegative;
+comment on constraint products_quantity_nonnegative on public.products is
+  'beauty-inventory:phase-2:products_quantity_nonnegative:v1';
 create function public.adjust_product_quantity(product_id uuid, quantity_delta integer)
 returns integer language plpgsql security invoker set search_path = '' as $$
 declare updated_quantity integer;
@@ -185,5 +187,7 @@ begin
   return updated_quantity;
 end;
 $$;
+comment on function public.adjust_product_quantity(uuid,integer) is
+  'beauty-inventory:phase-2:adjust_product_quantity:v1';
 revoke all on function public.adjust_product_quantity(uuid,integer) from public,anon;
 grant execute on function public.adjust_product_quantity(uuid,integer) to authenticated;

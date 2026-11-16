@@ -6,6 +6,27 @@
 
 begin;
 
+select pg_advisory_xact_lock(hashtext('beauty-inventory-phase-2-atomic-inventory'));
+
+-- Fail closed instead of adopting or replacing an object that may belong to
+-- another site sharing this database.
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.products'::regclass
+      and conname = 'products_quantity_nonnegative'
+  ) then
+    raise exception 'Phase 2 preflight failed: constraint public.products.products_quantity_nonnegative already exists';
+  end if;
+
+  if to_regprocedure('public.adjust_product_quantity(uuid,integer)') is not null then
+    raise exception 'Phase 2 preflight failed: function public.adjust_product_quantity(uuid,integer) already exists';
+  end if;
+end
+$$;
+
 alter table public.products
   add constraint products_quantity_nonnegative
   check (quantity >= 0) not valid;
@@ -13,7 +34,10 @@ alter table public.products
 alter table public.products
   validate constraint products_quantity_nonnegative;
 
-create or replace function public.adjust_product_quantity(
+comment on constraint products_quantity_nonnegative on public.products is
+  'beauty-inventory:phase-2:products_quantity_nonnegative:v1';
+
+create function public.adjust_product_quantity(
   product_id uuid,
   quantity_delta integer
 )
@@ -46,8 +70,39 @@ begin
 end
 $$;
 
+comment on function public.adjust_product_quantity(uuid, integer) is
+  'beauty-inventory:phase-2:adjust_product_quantity:v1';
+
 revoke all on function public.adjust_product_quantity(uuid, integer) from public, anon;
 grant execute on function public.adjust_product_quantity(uuid, integer) to authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint constraint_object
+    where constraint_object.conrelid = 'public.products'::regclass
+      and constraint_object.conname = 'products_quantity_nonnegative'
+      and constraint_object.contype = 'c'
+      and constraint_object.convalidated
+      and obj_description(constraint_object.oid, 'pg_constraint') =
+        'beauty-inventory:phase-2:products_quantity_nonnegative:v1'
+  ) then
+    raise exception 'Phase 2 postcondition failed: owned nonnegative constraint is incomplete';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_proc function_object
+    where function_object.oid = to_regprocedure('public.adjust_product_quantity(uuid,integer)')
+      and not function_object.prosecdef
+      and obj_description(function_object.oid, 'pg_proc') =
+        'beauty-inventory:phase-2:adjust_product_quantity:v1'
+  ) then
+    raise exception 'Phase 2 postcondition failed: owned atomic inventory function is incomplete';
+  end if;
+end
+$$;
 
 -- SAFE DEFAULT. Change only after backup, review, and isolated restore testing.
 rollback;

@@ -7,17 +7,34 @@ async function source(path) {
 }
 
 test("atomic stock draft increments in the database and cannot cross zero", async () => {
-  const sql = await source("../supabase/phase-2-atomic-inventory.DRAFT.sql");
+  const [sql, rollback] = await Promise.all([
+    source("../supabase/phase-2-atomic-inventory.DRAFT.sql"),
+    source("../supabase/phase-2-atomic-inventory-rollback.DRAFT.sql"),
+  ]);
   const executable = sql.replace(/--[^\n]*/g, "");
+  const rollbackExecutable = rollback.replace(/--[^\n]*/g, "");
 
   assert.match(sql, /security invoker/i);
+  assert.match(sql, /adjust_product_quantity\(uuid,integer\).*already exists/is);
+  assert.match(sql, /products_quantity_nonnegative.*already exists/is);
+  assert.doesNotMatch(sql, /create\s+or\s+replace\s+function/i);
   assert.match(sql, /set quantity = quantity \+ quantity_delta/i);
   assert.match(sql, /quantity \+ quantity_delta >= 0/i);
   assert.match(sql, /check \(quantity >= 0\)/i);
+  assert.match(sql, /beauty-inventory:phase-2:products_quantity_nonnegative:v1/i);
+  assert.match(sql, /beauty-inventory:phase-2:adjust_product_quantity:v1/i);
   assert.match(sql, /revoke all .* from public, anon/i);
   assert.match(sql, /grant execute .* to authenticated/i);
   assert.match(executable, /rollback;\s*$/i);
   assert.doesNotMatch(executable, /\bcommit\s*;/i);
+
+  assert.match(rollback, /obj_description\(constraint_oid, 'pg_constraint'\) is distinct from/i);
+  assert.match(rollback, /obj_description\(function_object\.oid, 'pg_proc'\)/i);
+  assert.match(rollback, /drop function public\.adjust_product_quantity\(uuid, integer\)/i);
+  assert.match(rollback, /drop constraint products_quantity_nonnegative/i);
+  assert.doesNotMatch(rollbackExecutable, /\b(update|insert|delete)\s+(?:from|into\s+)?public\.products\b/i);
+  assert.match(rollbackExecutable, /rollback;\s*$/i);
+  assert.doesNotMatch(rollbackExecutable, /\bcommit\s*;/i);
 });
 
 test("quick stock action requires the shared allowlist guard before RPC", async () => {

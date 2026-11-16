@@ -34,8 +34,6 @@ begin
   end if;
 
   if (select count(*) from pg_policies
-      where schemaname = 'storage' and tablename = 'objects') <> 4
-     or (select count(*) from pg_policies
       where schemaname = 'storage' and tablename = 'objects'
         and policyname in (
           'inventory owner read product images',
@@ -45,6 +43,21 @@ begin
         )
         and roles = array['authenticated']::name[]) <> 4 then
     raise exception 'Phase 1 rollback preflight failed: protected Storage policies do not match';
+  end if;
+
+  if exists (
+    select 1
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname in (
+        'public read product images',
+        'admin upload product images',
+        'admin update product images',
+        'admin delete product images'
+      )
+  ) then
+    raise exception 'Phase 1 rollback preflight failed: baseline Storage policies unexpectedly remain';
   end if;
 
   if not exists (
@@ -144,8 +157,6 @@ begin
   end if;
 
   if (select count(*) from pg_policies
-      where schemaname = 'storage' and tablename = 'objects') <> 4
-     or (select count(*) from pg_policies
       where schemaname = 'storage' and tablename = 'objects'
         and policyname in (
           'public read product images',
@@ -155,6 +166,21 @@ begin
         )
         and roles = array['public']::name[]) <> 4 then
     raise exception 'Phase 1 rollback postcondition failed: baseline Storage policies are incomplete';
+  end if;
+
+  if exists (
+    select 1
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname in (
+        'inventory owner read product images',
+        'inventory owner upload product images',
+        'inventory owner update product images',
+        'inventory owner delete product images'
+      )
+  ) then
+    raise exception 'Phase 1 rollback postcondition failed: protected Storage policies remain';
   end if;
 
   if not exists (
