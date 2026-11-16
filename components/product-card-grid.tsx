@@ -160,13 +160,8 @@ export function ProductCardGrid({
         onTouchEnd={finishTouch}
         onTouchCancel={finishTouch}
       >
-        <ProductActionsMenu
-          product={product}
-          onDeleted={onDeleted}
-          className="absolute right-3 top-3 z-10 hidden sm:block"
-        />
-        <button type="button" onClick={handleCardOpen} className="flex h-full w-full flex-col text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
-        <h3 className="w-full truncate pr-8 text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
+        <button type="button" onClick={handleCardOpen} className="flex min-h-0 w-full flex-1 flex-col text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
+        <h3 className="w-full truncate text-lg font-medium leading-snug tracking-[0.05em] text-textHeading">
           {product.name}
         </h3>
 
@@ -221,13 +216,19 @@ export function ProductCardGrid({
         </div>
         </div>
 
-        <div className="mt-auto flex w-full items-center pt-6 text-xs text-textSecondary">
-          <div className="flex items-center gap-1.5">
+        </button>
+
+        <div className="mt-auto flex w-full items-center justify-between pt-6 text-xs text-textSecondary">
+          <button type="button" onClick={handleCardOpen} className="flex items-center gap-1.5 text-left" aria-label={`查看 ${product.name} 詳細資訊`}>
             <Calendar size={14} strokeWidth={1.75} />
             <span>{formatExpirationCompact(product)}</span>
-          </div>
+          </button>
+          <ProductActionsMenu
+            product={product}
+            onDeleted={onDeleted}
+            className="hidden sm:block"
+          />
         </div>
-        </button>
       </Card>
     </div>
   );

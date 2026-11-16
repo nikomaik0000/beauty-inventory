@@ -31,7 +31,7 @@ export function SiteHeader() {
         </Link>
 
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-5 sm:flex">
-          <nav aria-label="主要導覽" className="flex items-center gap-1">
+          <nav aria-label="主要導覽" className="flex items-center divide-x divide-divider">
             {navigation.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -40,10 +40,10 @@ export function SiteHeader() {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative rounded-input px-3 py-2 text-sm font-medium transition-colors",
+                    "px-4 py-1 text-sm font-medium transition-colors first:pl-0 last:pr-0",
                     active
-                      ? "bg-accentSoft text-accentStrong"
-                      : "text-textSecondary hover:bg-surfaceMuted hover:text-textPrimary",
+                      ? "text-accentStrong"
+                      : "text-textSecondary hover:text-textPrimary",
                   )}
                 >
                   {item.label}
@@ -54,10 +54,11 @@ export function SiteHeader() {
 
           <Link
             href="/admin/products/new"
-            className="flex h-9 shrink-0 items-center gap-1.5 rounded-button border border-border bg-surface px-3.5 text-xs font-medium text-textSecondary transition-colors hover:bg-surfaceMuted"
+            aria-label="新增商品"
+            title="新增商品"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-textSecondary transition-colors hover:bg-surfaceMuted hover:text-textPrimary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accentSoft"
           >
-            <Plus size={14} strokeWidth={1.75} />
-            新增商品
+            <Plus size={15} strokeWidth={1.6} />
           </Link>
         </div>
       </div>

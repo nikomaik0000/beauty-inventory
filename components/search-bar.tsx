@@ -12,9 +12,9 @@ export function SearchBar({ value, onChange }: { value: string; onChange: (value
       />
       <input
         type="text"
+        aria-label="搜尋商品"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="搜尋商品…"
         className="h-10 w-full rounded-input border border-border bg-searchBackground pl-11 pr-9 text-sm text-textPrimary placeholder:text-textMuted"
       />
       {value && (

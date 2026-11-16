@@ -47,8 +47,6 @@ export interface ProductWithRelations extends Product {
   subcategory: Subcategory | null;
 }
 
-export type ViewMode = "list" | "card";
-
 export type SortField = "expiration" | "brand" | "updated_at" | "quantity";
 
 export interface ProductFilters {

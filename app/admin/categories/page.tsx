@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Trash2, X, Check } from "lucide-react";
 import { AddEntityForm } from "@/components/admin/add-entity-form";
+import { MobileSwipeActionRow } from "@/components/mobile-swipe-action-row";
 import { Input } from "@/components/ui/input";
 import {
   createCategory,
@@ -83,8 +84,8 @@ export default function CategoriesAdminPage() {
       <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
         {categories.map((category) => (
           <div key={category.id} className="rounded-card border border-border bg-surface p-4 shadow-card">
-            <div className="flex items-center justify-between gap-2">
-              {editingCategoryId === category.id ? (
+            {editingCategoryId === category.id ? (
+              <div className="flex min-h-11 items-center justify-between gap-2 sm:min-h-0">
                 <div className="flex flex-1 items-center gap-2">
                   <Input value={categoryDraft} onChange={(e) => setCategoryDraft(e.target.value)} className="h-8" autoFocus />
                   <button
@@ -105,45 +106,58 @@ export default function CategoriesAdminPage() {
                     <X size={14} strokeWidth={1.75} />
                   </button>
                 </div>
-              ) : (
-                <>
-                  <h2 className="text-base font-medium text-textPrimary">{category.name}</h2>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label={`重新命名 ${category.name}`}
-                      onClick={() => {
-                        setEditingCategoryId(category.id);
-                        setCategoryDraft(category.name);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
-                    >
-                      <Pencil size={14} strokeWidth={1.75} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`刪除 ${category.name}`}
-                      onClick={async () => {
-                        if (!confirm(`確定要刪除「${category.name}」及其所有小分類嗎？`)) return;
-                        await deleteCategory(category.id);
-                        await refresh();
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
-                    >
-                      <Trash2 size={14} strokeWidth={1.75} />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+              </div>
+            ) : (
+              <MobileSwipeActionRow
+                itemId={`category:${category.id}`}
+                itemLabel={category.name}
+                onEdit={() => {
+                  setEditingCategoryId(category.id);
+                  setCategoryDraft(category.name);
+                }}
+                onDelete={async () => {
+                  if (!confirm(`確定要刪除「${category.name}」及其所有小分類嗎？`)) return;
+                  await deleteCategory(category.id);
+                  await refresh();
+                }}
+                contentClassName="flex min-h-11 items-center justify-between gap-2 sm:min-h-0"
+              >
+                <h2 className="text-base font-medium text-textPrimary">{category.name}</h2>
+                <div className="hidden items-center gap-1 sm:flex">
+                  <button
+                    type="button"
+                    aria-label={`重新命名 ${category.name}`}
+                    onClick={() => {
+                      setEditingCategoryId(category.id);
+                      setCategoryDraft(category.name);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-surfaceMuted"
+                  >
+                    <Pencil size={14} strokeWidth={1.75} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`刪除 ${category.name}`}
+                    onClick={async () => {
+                      if (!confirm(`確定要刪除「${category.name}」及其所有小分類嗎？`)) return;
+                      await deleteCategory(category.id);
+                      await refresh();
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-input text-textSecondary hover:bg-dangerSoft hover:text-danger"
+                  >
+                    <Trash2 size={14} strokeWidth={1.75} />
+                  </button>
+                </div>
+              </MobileSwipeActionRow>
+            )}
 
             <ul className="mt-3 space-y-1">
               {subcategories
                 .filter((s) => s.category_id === category.id)
                 .map((sub) => (
-                  <li key={sub.id} className="flex items-center justify-between rounded-input px-2.5 py-1.5 text-sm hover:bg-surfaceMuted">
+                  <li key={sub.id} className="overflow-hidden rounded-input text-sm">
                     {editingSubId === sub.id ? (
-                      <div className="flex flex-1 items-center gap-2">
+                      <div className="flex min-h-11 flex-1 items-center gap-2 px-2.5 py-1.5 sm:min-h-0">
                         <Input value={subDraft} onChange={(e) => setSubDraft(e.target.value)} className="h-7" autoFocus />
                         <button
                           type="button"
@@ -164,7 +178,20 @@ export default function CategoriesAdminPage() {
                         </button>
                       </div>
                     ) : (
-                      <>
+                      <MobileSwipeActionRow
+                        itemId={`subcategory:${sub.id}`}
+                        itemLabel={sub.name}
+                        onEdit={() => {
+                          setEditingSubId(sub.id);
+                          setSubDraft(sub.name);
+                        }}
+                        onDelete={async () => {
+                          if (!confirm(`確定要刪除「${sub.name}」嗎？`)) return;
+                          await deleteSubcategory(sub.id);
+                          await refresh();
+                        }}
+                        contentClassName="flex min-h-11 items-center justify-between px-2.5 py-1.5 hover:bg-surfaceMuted sm:min-h-0"
+                      >
                         <span className="min-w-0 text-textSecondary">
                           {sub.name}
                           <span className="ml-2 text-xs text-textMuted">
@@ -173,7 +200,7 @@ export default function CategoriesAdminPage() {
                               ` · ${formatCapacity(summaryBySubcategory[sub.id]?.totalCapacity ?? 0)}`}
                           </span>
                         </span>
-                        <div className="flex items-center gap-1">
+                        <div className="hidden items-center gap-1 sm:flex">
                           <button
                             type="button"
                             aria-label={`重新命名 ${sub.name}`}
@@ -198,7 +225,7 @@ export default function CategoriesAdminPage() {
                             <Trash2 size={14} strokeWidth={1.75} />
                           </button>
                         </div>
-                      </>
+                      </MobileSwipeActionRow>
                     )}
                   </li>
                 ))}

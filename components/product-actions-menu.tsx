@@ -70,7 +70,7 @@ export function ProductActionsMenu({
             aria-expanded={open}
             className="flex h-9 w-9 items-center justify-center rounded-input bg-transparent text-textSecondary transition-colors hover:bg-accentSoft focus-visible:bg-accentSoft focus-visible:outline-none disabled:opacity-50"
           >
-            <MoreHorizontal size={16} strokeWidth={1.75} />
+            <MoreHorizontal size={14} strokeWidth={1.5} />
           </button>
         )}
       />

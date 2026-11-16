@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { MobileSwipeActionRow } from "@/components/mobile-swipe-action-row";
 
 export function SimpleEntityList({
   items,
@@ -32,10 +33,10 @@ export function SimpleEntityList({
       {items.map((item) => (
         <li
           key={item.id}
-          className="flex min-w-0 items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-2.5 shadow-card"
+          className="min-w-0 overflow-hidden rounded-card border border-border bg-surface shadow-card sm:overflow-visible"
         >
           {editingId === item.id ? (
-            <>
+            <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5">
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -68,11 +69,23 @@ export function SimpleEntityList({
                   <X size={14} strokeWidth={1.75} />
                 </button>
               </div>
-            </>
+            </div>
           ) : (
-            <>
+            <MobileSwipeActionRow
+              itemId={`brand:${item.id}`}
+              itemLabel={item.name}
+              onEdit={() => {
+                setEditingId(item.id);
+                setDraft(item.name);
+              }}
+              onDelete={() => {
+                if (!confirm(`確定要刪除「${item.name}」嗎？使用中的商品會保留其他資料。`)) return;
+                startTransition(() => onDelete(item.id));
+              }}
+              contentClassName="flex min-h-14 items-center justify-between gap-3 px-4 py-2.5"
+            >
               <span className="min-w-0 truncate text-sm text-textPrimary">{item.name}</span>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="hidden shrink-0 items-center gap-1 sm:flex">
                 <button
                   type="button"
                   aria-label={`重新命名 ${item.name}`}
@@ -97,7 +110,7 @@ export function SimpleEntityList({
                   <Trash2 size={14} strokeWidth={1.75} />
                 </button>
               </div>
-            </>
+            </MobileSwipeActionRow>
           )}
         </li>
       ))}

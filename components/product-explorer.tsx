@@ -7,8 +7,6 @@ import { Plus } from "lucide-react";
 import { SearchBar } from "@/components/search-bar";
 import { FilterPanel } from "@/components/filter-panel";
 import { SortMenu } from "@/components/sort-menu";
-import { ViewToggle } from "@/components/view-toggle";
-import { ProductListTable } from "@/components/product-list-table";
 import { ProductCardGrid } from "@/components/product-card-grid";
 import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { useLocalStorage } from "@/lib/use-local-storage";
@@ -21,7 +19,6 @@ import type {
   ProductWithRelations,
   SortField,
   Subcategory,
-  ViewMode,
 } from "@/lib/types";
 
 function compareTextStable(left: string, right: string) {
@@ -40,7 +37,6 @@ export function ProductExplorer({
   subcategories: Subcategory[];
   brands: Brand[];
 }) {
-  const [viewMode, setViewMode] = useLocalStorage<ViewMode>("beauty-inventory:view-mode", "list");
   const [sortField, setSortField] = useLocalStorage<SortField>("beauty-inventory:sort-field", "expiration");
   const [filters, setFilters] = useState<ProductFilters>(defaultFilters);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -131,24 +127,19 @@ export function ProductExplorer({
 
   return (
     <div className="w-full min-w-0">
-      {/* Row 1: search, full width.
-          Row 2: Filter + Sort on the left, view toggle on the right —
-          vertically aligned, never wraps. */}
+      {/* Row 1: search, full width. Row 2: Filter + Sort. */}
       <div className="flex w-full min-w-0 flex-col gap-3">
         <SearchBar value={filters.search} onChange={(v) => setFilters((f) => ({ ...f, search: v }))} />
-        <div className="flex flex-nowrap items-center justify-between gap-2">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <FilterPanel
-              filters={filters}
-              onChange={setFilters}
-              categories={categories}
-              subcategories={subcategories}
-              brands={brands}
-              activeCount={activeFilterCount}
-            />
-            <SortMenu value={sortField} onChange={setSortField} />
-          </div>
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <div className="flex flex-nowrap items-center gap-2">
+          <FilterPanel
+            filters={filters}
+            onChange={setFilters}
+            categories={categories}
+            subcategories={subcategories}
+            brands={brands}
+            activeCount={activeFilterCount}
+          />
+          <SortMenu value={sortField} onChange={setSortField} />
         </div>
       </div>
 
@@ -162,10 +153,6 @@ export function ProductExplorer({
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
           <p className="text-sm font-medium text-textPrimary">沒有符合條件的商品</p>
           <p className="text-xs text-textMuted">試著清除篩選條件或換個關鍵字搜尋看看。</p>
-        </div>
-      ) : viewMode === "list" ? (
-        <div className="mt-8">
-          <ProductListTable products={sorted} onOpen={setSelectedProductId} />
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
