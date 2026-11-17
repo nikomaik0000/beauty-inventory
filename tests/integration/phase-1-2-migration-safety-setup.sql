@@ -109,6 +109,13 @@ insert into other_site.records values (1, 'must remain unchanged');
 insert into public.products (id, quantity)
 values ('40000000-0000-4000-8000-000000000001', 5);
 
+-- Match the production row count with fictional UUIDs while keeping the one
+-- deterministic product above for stock assertions.
+insert into public.products (id, quantity)
+select md5('phase-2-fictional-product-' || sequence_number::text)::uuid,
+       sequence_number
+from generate_series(2, 28) sequence_number;
+
 create schema test_support;
 create function test_support.assert_true(condition boolean, message text)
 returns void

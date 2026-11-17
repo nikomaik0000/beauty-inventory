@@ -7,12 +7,18 @@ async function source(path) {
 }
 
 test("atomic stock draft increments in the database and cannot cross zero", async () => {
-  const [sql, rollback] = await Promise.all([
+  const [sql, rollback, production, rollbackReview, verification] = await Promise.all([
     source("../supabase/phase-2-atomic-inventory.DRAFT.sql"),
     source("../supabase/phase-2-atomic-inventory-rollback.DRAFT.sql"),
+    source("../supabase/phase-2-atomic-inventory.PRODUCTION.sql"),
+    source("../supabase/phase-2-atomic-inventory-rollback.REVIEW.sql"),
+    source("../supabase/phase-2-atomic-inventory-post-install-readonly.sql"),
   ]);
   const executable = sql.replace(/--[^\n]*/g, "");
   const rollbackExecutable = rollback.replace(/--[^\n]*/g, "");
+  const productionExecutable = production.replace(/--[^\n]*/g, "");
+  const rollbackReviewExecutable = rollbackReview.replace(/--[^\n]*/g, "");
+  const verificationExecutable = verification.replace(/--[^\n]*/g, "");
 
   assert.match(sql, /security invoker/i);
   assert.match(sql, /adjust_product_quantity\(uuid,integer\).*already exists/is);
@@ -35,6 +41,29 @@ test("atomic stock draft increments in the database and cannot cross zero", asyn
   assert.doesNotMatch(rollbackExecutable, /\b(update|insert|delete)\s+(?:from|into\s+)?public\.products\b/i);
   assert.match(rollbackExecutable, /rollback;\s*$/i);
   assert.doesNotMatch(rollbackExecutable, /\bcommit\s*;/i);
+
+  assert.match(production, /Phase 1 allowlist function is incomplete/i);
+  assert.match(production, /Phase 1 products RLS policy is incomplete/i);
+  assert.match(production, /Phase 1 products grants are incomplete/i);
+  assert.match(production, /phase2_quantity_fingerprint/i);
+  assert.match(production, /product inventory changed during installation/i);
+  assert.match(productionExecutable, /commit;\s*$/i);
+  assert.doesNotMatch(productionExecutable, /rollback;\s*$/i);
+
+  assert.match(rollbackReviewExecutable, /rollback;\s*$/i);
+  assert.doesNotMatch(rollbackReviewExecutable, /\bcommit\s*;/i);
+  assert.doesNotMatch(
+    rollbackReviewExecutable,
+    /\b(update|insert|delete)\s+(?:from|into\s+)?public\.products\b/i,
+  );
+
+  assert.match(verification, /expected_product_count_28/i);
+  assert.match(verification, /rpc_anon_execute_denied/i);
+  assert.match(verification, /quantity_fingerprint/i);
+  assert.doesNotMatch(
+    verificationExecutable,
+    /\b(begin|commit|rollback|create|alter|drop|grant|revoke|update|insert|delete)\b/i,
+  );
 });
 
 test("quick stock action requires the shared allowlist guard before RPC", async () => {

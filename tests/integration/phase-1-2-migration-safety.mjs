@@ -104,11 +104,12 @@ try {
   const phase1ForwardDraft = join(repositoryRoot, "supabase/phase-1-security-forward.DRAFT.sql");
   const phase1RollbackDraft = join(repositoryRoot, "supabase/phase-1-security-rollback.DRAFT.sql");
   const phase2ForwardDraft = join(repositoryRoot, "supabase/phase-2-atomic-inventory.DRAFT.sql");
-  const phase2RollbackDraft = join(repositoryRoot, "supabase/phase-2-atomic-inventory-rollback.DRAFT.sql");
+  const phase2Production = join(repositoryRoot, "supabase/phase-2-atomic-inventory.PRODUCTION.sql");
+  const phase2RollbackReview = join(repositoryRoot, "supabase/phase-2-atomic-inventory-rollback.REVIEW.sql");
+  const phase2Verification = join(repositoryRoot, "supabase/phase-2-atomic-inventory-post-install-readonly.sql");
   const phase1Forward = committedDraft(phase1ForwardDraft, "phase-1-forward.sql");
   const phase1Rollback = committedDraft(phase1RollbackDraft, "phase-1-rollback.sql");
-  const phase2Forward = committedDraft(phase2ForwardDraft, "phase-2-forward.sql");
-  const phase2Rollback = committedDraft(phase2RollbackDraft, "phase-2-rollback.sql");
+  const phase2Rollback = committedDraft(phase2RollbackReview, "phase-2-rollback.sql");
 
   sqlFile(setup);
   const sharedPolicyOid = scalar(`
@@ -143,6 +144,9 @@ try {
   assertSql("(select payload from other_site.records where id=1) = 'must remain unchanged'", "other-site data unchanged after Phase 1 rollback");
   console.log("PASS Phase 1 named Storage policies preserve shared resources");
 
+  // Production Phase 2 requires the already-enabled Phase 1 contract.
+  sqlFile(phase1Forward);
+
   console.log("RUN Phase 2 collision guards");
   sqlFile(phase2ForwardDraft);
   assertSql("to_regprocedure('public.adjust_product_quantity(uuid,integer)') is null", "Phase 2 forward draft keeps its safe-default rollback");
@@ -153,7 +157,7 @@ try {
     create function public.adjust_product_quantity(uuid, integer) returns integer language sql as 'select 777';
     comment on function public.adjust_product_quantity(uuid, integer) is 'other-site-owned';
   `);
-  const collisionResult = sqlFile(phase2Forward, true);
+  const collisionResult = sqlFile(phase2Production, true);
   if (collisionResult.status === 0) throw new Error("Phase 2 forward unexpectedly replaced existing objects");
   assertSql("public.adjust_product_quantity(gen_random_uuid(), 1) = 777", "foreign same-signature function was not replaced");
   assertSql("obj_description(to_regprocedure('public.adjust_product_quantity(uuid,integer)'), 'pg_proc') = 'other-site-owned'", "foreign function ownership marker unchanged");
@@ -165,10 +169,24 @@ try {
   console.log("PASS Phase 2 forward fails closed on same-named objects");
 
   console.log("RUN Phase 2 forward, rollback guard, rollback, and reinstall");
-  sqlFile(phase2Forward);
-  assertSql("public.adjust_product_quantity('40000000-0000-4000-8000-000000000001', 1) = 6", "Phase 2 atomic update works before rollback");
+  sqlFile(phase2Production);
+  const deniedRpc = run(psql, [
+    ...psqlArguments(),
+    "-c",
+    `set role authenticated;
+     select set_config('request.jwt.claim.sub', '50000000-0000-4000-8000-000000000001', false);
+     select public.adjust_product_quantity('40000000-0000-4000-8000-000000000001', 1);`,
+  ], { capture: true, allowFailure: true });
+  if (deniedRpc.status === 0) throw new Error("Phase 2 RPC bypassed the Phase 1 allowlist");
+  assertSql("(select quantity from public.products where id='40000000-0000-4000-8000-000000000001') = 5", "non-allowlisted RPC call did not update inventory");
+  sql(`
+    set role authenticated;
+    select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000000', false);
+    select public.adjust_product_quantity('40000000-0000-4000-8000-000000000001', 1);
+  `);
+  assertSql("(select quantity from public.products where id='40000000-0000-4000-8000-000000000001') = 6", "allowlisted Phase 2 atomic update works before rollback");
 
-  sqlFile(phase2RollbackDraft);
+  sqlFile(phase2RollbackReview);
   assertSql("to_regprocedure('public.adjust_product_quantity(uuid,integer)') is not null", "Phase 2 rollback draft keeps its safe-default rollback");
   assertSql("(select quantity from public.products where id='40000000-0000-4000-8000-000000000001') = 6", "safe-default rollback did not alter inventory data");
 
@@ -184,10 +202,16 @@ try {
   assertSql("not exists(select 1 from pg_constraint where conrelid='public.products'::regclass and conname='products_quantity_nonnegative')", "Phase 2 rollback removed its constraint");
   assertSql("(select quantity from public.products where id='40000000-0000-4000-8000-000000000001') = 6", "Phase 2 rollback preserved successful inventory changes");
 
-  sqlFile(phase2Forward);
+  sqlFile(phase2Production);
   assertSql("to_regprocedure('public.adjust_product_quantity(uuid,integer)') is not null", "Phase 2 reinstall restored the function");
   assertSql("exists(select 1 from pg_constraint where conrelid='public.products'::regclass and conname='products_quantity_nonnegative')", "Phase 2 reinstall restored the constraint");
   assertSql("(select quantity from public.products where id='40000000-0000-4000-8000-000000000001') = 6", "Phase 2 reinstall did not rewrite inventory data");
+  assertSql("(select payload from other_site.records where id=1) = 'must remain unchanged'", "Phase 2 did not modify other-site data");
+  assertSql("exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='shared site read images')", "Phase 2 did not modify other-site Storage policies");
+  const verificationResult = sqlFile(phase2Verification);
+  if (verificationResult.stdout.includes("FAIL")) {
+    throw new Error(`Phase 2 read-only verification reported a failure:\n${verificationResult.stdout}`);
+  }
   console.log("PASS Phase 2 forward, guarded rollback, rollback, and reinstall");
 } finally {
   if (clusterStarted) {
