@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, FileJson, FileWarning, SearchCheck, Upload } from "lucide-react";
+import { Download, FileWarning, SearchCheck, Upload } from "lucide-react";
 import { commitProductsJsonImport, exportProductsJson, previewProductsJson } from "@/app/actions/product-json";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,10 +14,10 @@ import {
 } from "@/lib/product-json";
 import { cn } from "@/lib/utils";
 
-const modes: Array<{ value: JsonImportMode; label: string; description: string }> = [
-  { value: "add", label: "新增", description: "只預覽尚不存在的 UUID；不覆蓋現有商品。" },
-  { value: "update", label: "更新", description: "只比較已存在的 UUID；不以名稱自動覆蓋。" },
-  { value: "replace", label: "取代", description: "同時預覽新增、更新，以及未出現在 JSON 中的待移除商品。" },
+const modes: Array<{ value: JsonImportMode; label: string }> = [
+  { value: "add", label: "新增" },
+  { value: "update", label: "更新" },
+  { value: "replace", label: "取代" },
 ];
 
 const statusLabels: Record<JsonPreviewStatus | "error", string> = {
@@ -160,18 +160,8 @@ export function JsonDataManager() {
   }
 
   return (
-    <section className="space-y-5 rounded-card border border-border bg-surface p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <FileJson size={19} strokeWidth={1.75} className="text-accentStrong" />
-            <h2 className="font-semibold text-textPrimary">JSON 資料匯入／匯出</h2>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-textMuted">
-            JSON 包含商品資料與圖片 object path，不包含圖片實體檔案，也不是完整圖片備份。
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <section className="space-y-5">
+      <div className="flex flex-wrap gap-2">
           <Button type="button" size="sm" variant="secondary" onClick={() => downloadJson("beauty-inventory-json-範例.json", JSON.stringify(buildExampleProductJson(), null, 2))}>
             <Download size={14} strokeWidth={1.75} />
             JSON 範例
@@ -180,15 +170,9 @@ export function JsonDataManager() {
             <Download size={14} strokeWidth={1.75} />
             {busy === "export" ? "匯出中…" : "匯出全部商品"}
           </Button>
-        </div>
       </div>
 
-      <div className="border-t border-divider pt-5">
-        <h3 className="text-sm font-medium text-textPrimary">匯入差異預覽</h3>
-        <p className="mt-1 text-xs text-textMuted">提交前會由伺服器與資料庫再次驗證；RPC 未安裝時只允許預覽。</p>
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2">
         {modes.map((option) => (
           <button
             key={option.value}
@@ -201,15 +185,20 @@ export function JsonDataManager() {
               idempotencyRef.current = null;
             }}
             className={cn(
-              "min-h-20 rounded-input border p-3 text-left transition-colors",
+              "flex h-10 items-center justify-center rounded-input border px-4 text-sm font-medium transition-colors",
               mode === option.value ? "border-accent bg-surfaceMuted" : "border-border bg-surface hover:bg-surfaceMuted/50",
             )}
           >
-            <span className="text-sm font-medium text-textPrimary">{option.label}</span>
-            <span className="mt-1 block text-xs leading-5 text-textMuted">{option.description}</span>
+            <span className="text-textPrimary">{option.label}</span>
           </button>
         ))}
       </div>
+
+      {mode === "replace" && (
+        <p className="rounded-input border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-700">
+          取代模式可能刪除未出現在 JSON 的現有商品；實際異動前仍會顯示差異並要求確認。
+        </p>
+      )}
 
       <div className="space-y-3">
         <textarea
@@ -239,7 +228,6 @@ export function JsonDataManager() {
             <SearchCheck size={14} strokeWidth={1.75} />
             {busy === "preview" ? "分析中…" : "產生差異預覽"}
           </Button>
-          <span className="text-xs text-textMuted sm:ml-auto">目前模式：{modes.find((item) => item.value === mode)?.label}</span>
         </div>
       </div>
 

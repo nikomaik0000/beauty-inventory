@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { deleteOrphanedImages, findOrphanedImages, type OrphanedImage } from "@/app/actions/storage";
 
 function formatBytes(bytes: number | null): string {
@@ -61,23 +60,18 @@ export function StorageMaintenance() {
   }
 
   return (
-    <Card className="p-6">
-      <h2 className="text-sm font-semibold text-textPrimary">儲存空間維護</h2>
-      <p className="mt-1 text-xs text-textMuted">
-        掃描圖片儲存空間，找出沒有被商品或保留快照引用的圖片；Phase 3B 引用檢查不可用時會安全停止。
-      </p>
-
-      <div className="mt-4">
+    <section className="space-y-4">
+      <div>
         <Button size="sm" variant="secondary" onClick={handleScan} disabled={scanning}>
           {scanning ? <Loader2 size={14} strokeWidth={1.75} className="animate-spin" /> : null}
           {scanning ? "掃描中…" : "掃描未使用的圖片"}
         </Button>
       </div>
 
-      {error && <p className="mt-3 text-xs text-danger">{error}</p>}
+      {error && <p className="text-xs text-danger">{error}</p>}
 
       {scanned && !scanning && (
-        <div className="mt-4">
+        <div>
           {orphans.length === 0 ? (
             <p className="text-xs text-textMuted">沒有找到未使用的圖片。儲存空間很乾淨。</p>
           ) : (
@@ -114,6 +108,6 @@ export function StorageMaintenance() {
           )}
         </div>
       )}
-    </Card>
+    </section>
   );
 }

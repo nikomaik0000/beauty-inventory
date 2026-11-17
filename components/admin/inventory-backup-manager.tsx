@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArchiveRestore, DatabaseBackup, RefreshCw } from "lucide-react";
+import { ArchiveRestore, RefreshCw } from "lucide-react";
 import {
   commitInventoryBackupRestore,
   listInventoryBackups,
@@ -76,15 +76,8 @@ export function InventoryBackupManager() {
   }
 
   return (
-    <section className="space-y-4 rounded-card border border-border bg-surface p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <DatabaseBackup size={19} strokeWidth={1.75} className="text-accentStrong" />
-            <h2 className="font-semibold text-textPrimary">商品快照與還原</h2>
-          </div>
-          <p className="mt-1 text-xs leading-5 text-textMuted">每次異動前自動建立資料庫快照；不包含 Storage 圖片實體檔案。</p>
-        </div>
+    <section className="space-y-4">
+      <div className="flex justify-end">
         <Button type="button" size="sm" variant="ghost" onClick={() => void load()} disabled={busy !== null} aria-label="重新整理備份清單">
           <RefreshCw size={14} strokeWidth={1.75} />
         </Button>
@@ -103,7 +96,7 @@ export function InventoryBackupManager() {
             <div key={backup.id} className="flex flex-col gap-2 rounded-input border border-border p-3 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1 text-xs leading-5">
                 <p className="font-medium text-textPrimary">{new Date(backup.createdAt).toLocaleString("zh-TW")} · {operationLabel(backup.operation)}</p>
-                <p className="text-textMuted">商品 {backup.productCount} 件，影響 {backup.affectedCount} 件，圖片引用 {backup.imageReferenceCount} 筆</p>
+                <p className="text-textMuted">影響 {backup.affectedCount} 件</p>
               </div>
               <Button type="button" size="sm" variant="secondary" disabled={busy !== null} onClick={() => void handlePreview(backup)}>
                 <ArchiveRestore size={14} strokeWidth={1.75} />
@@ -116,6 +109,9 @@ export function InventoryBackupManager() {
 
       {restore && selected && (
         <div className="space-y-3 rounded-input border border-red-200 bg-red-50/60 p-3 sm:p-4">
+          <p className="text-xs leading-5 text-red-700">
+            還原會覆蓋目前商品資料；快照不包含 Storage 圖片實體檔案。
+          </p>
           <div>
             <p className="text-sm font-medium text-red-700">還原預覽</p>
             <p className="mt-1 text-xs leading-5 text-textSecondary">
