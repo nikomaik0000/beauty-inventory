@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type SubmitErrorHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { FieldError, Input, Label, Select, Textarea } from "@/components/ui/input";
@@ -36,6 +36,7 @@ export function ProductForm({
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const bypassWarningRef = useRef(false);
+  const errorAlertRef = useRef<HTMLDivElement>(null);
   const sourceProduct = product ?? initialProduct;
 
   const {
@@ -83,6 +84,13 @@ export function ProductForm({
   useEffect(() => {
     onDirtyChange?.(isDirty || Boolean(pendingImage));
   }, [isDirty, onDirtyChange, pendingImage]);
+
+  useEffect(() => {
+    if (!serverError) return;
+    window.requestAnimationFrame(() => {
+      errorAlertRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, [serverError]);
 
   useEffect(() => {
     if (!isDirty && !pendingImage) return;
@@ -152,9 +160,18 @@ export function ProductForm({
     });
   };
 
+  const onInvalid: SubmitErrorHandler<ProductFormValues> = (formErrors) => {
+    const firstError = Object.values(formErrors).find(
+      (error) => typeof error?.message === "string",
+    );
+    const detail = typeof firstError?.message === "string" ? firstError.message : null;
+    setServerError(detail ? `無法儲存：${detail}` : "無法儲存，請檢查表單中標示的欄位。");
+  };
+
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
       onFocusCapture={(event) => {
         if (window.innerWidth >= 640) return;
         const target = event.target as HTMLElement;
@@ -165,7 +182,12 @@ export function ProductForm({
     >
       <div className={modal ? "min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6" : "contents"}>
       {serverError && (
-        <div className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger">
+        <div
+          ref={errorAlertRef}
+          role="alert"
+          aria-live="polite"
+          className="rounded-input border border-danger/30 bg-dangerSoft px-3.5 py-2.5 text-sm text-danger"
+        >
           {serverError}
         </div>
       )}
@@ -177,6 +199,7 @@ export function ProductForm({
           name="image_url"
           render={({ field }) => <ImageUploader value={field.value ?? ""} file={pendingImage} onChange={field.onChange} onFileChange={setPendingImage} />}
         />
+        <FieldError message={errors.image_url?.message} />
       </div>
 
       <div>
@@ -189,10 +212,12 @@ export function ProductForm({
         <div>
           <Label htmlFor="brand_name">品牌</Label>
           <Input id="brand_name" {...register("brand_name")} placeholder="例如：SK-II" />
+          <FieldError message={errors.brand_name?.message} />
         </div>
         <div>
           <Label htmlFor="quantity">庫存</Label>
           <Input id="quantity" type="number" min={0} {...register("quantity")} />
+          <FieldError message={errors.quantity?.message} />
         </div>
       </div>
 
@@ -236,6 +261,7 @@ export function ProductForm({
               </Select>
             )}
           />
+          <FieldError message={errors.subcategory_id?.message} />
         </div>
       </div>
 
@@ -243,6 +269,7 @@ export function ProductForm({
         <Label htmlFor="capacity">容量</Label>
         <Input id="capacity" type="number" min={0} step="any" {...register("capacity")} placeholder="例如：100" />
         <p className="mt-1 text-[11px] text-textMuted">僅需輸入數字，不含單位。</p>
+        <FieldError message={errors.capacity?.message} />
       </div>
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
@@ -256,6 +283,7 @@ export function ProductForm({
             <option value="none">無期限</option>
             <option value="unknown">未知</option>
           </Select>
+          <FieldError message={errors.expiration_type?.message} />
         </div>
         {expirationType === "dated" && (
           <div>
@@ -269,11 +297,13 @@ export function ProductForm({
       <div>
         <Label htmlFor="pao_months">開封後使用期限（PAO，月）</Label>
         <Input id="pao_months" type="number" min={0} {...register("pao_months")} placeholder="例如：12" />
+        <FieldError message={errors.pao_months?.message} />
       </div>
 
       <div>
         <Label htmlFor="notes">備註</Label>
         <Textarea id="notes" {...register("notes")} placeholder="任何值得記錄的小筆記…" />
+        <FieldError message={errors.notes?.message} />
       </div>
       </div>
 

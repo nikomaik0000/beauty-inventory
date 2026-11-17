@@ -85,3 +85,56 @@ test("every Phase 3B Server Action uses the shared allowlist before RPC access",
     assert.ok(body.indexOf("await requireInventoryUser()") < body.indexOf("supabase.rpc"), `${functionName} must authorize before RPC`);
   }
 });
+
+test("Phase 3B production artifacts fail closed and keep verification read-only", async () => {
+  const [production, preflight, rollback, verification] = await Promise.all([
+    source("../supabase/phase-3b-json-import-backup.PRODUCTION.sql"),
+    source("../supabase/phase-3b-json-import-backup-preflight.READONLY.sql"),
+    source("../supabase/phase-3b-json-import-backup-rollback.REVIEW.sql"),
+    source("../supabase/phase-3b-json-import-backup-post-install.READONLY.sql"),
+  ]);
+  const productionExecutable = production.replace(/--[^\n]*/g, "");
+  const preflightExecutable = preflight.replace(/--[^\n]*/g, "");
+  const rollbackExecutable = rollback.replace(/--[^\n]*/g, "");
+  const verificationExecutable = verification.replace(/--[^\n]*/g, "");
+
+  assert.match(production, /phase-3b-json-import-backup/);
+  assert.match(production, /Phase 1 allowlist is incomplete/);
+  assert.match(production, /Phase 2 inventory objects are incomplete/);
+  assert.match(production, /function % already exists/);
+  assert.match(production, /table inventory_private\.% already exists/);
+  assert.match(production, /phase3b_inventory_fingerprint/);
+  assert.match(production, /phase3b_image_fingerprint/);
+  assert.match(production, /unsupported JSON format or version/);
+  assert.match(production, /already-applied/);
+  assert.match(productionExecutable, /commit;\s*$/i);
+  assert.doesNotMatch(production, /create table if not exists/i);
+  assert.doesNotMatch(production, /create or replace function/i);
+
+  assert.match(rollback, /permanently deletes all Phase 3B/i);
+  assert.match(rollback, /missing or not owned/i);
+  assert.match(rollbackExecutable, /rollback;\s*$/i);
+  assert.doesNotMatch(rollbackExecutable, /commit;\s*$/i);
+
+  for (const readonlySql of [preflightExecutable, verificationExecutable]) {
+    const statementsOnly = readonlySql.replace(/'(?:''|[^'])*'/g, "''");
+    assert.doesNotMatch(
+      statementsOnly,
+      /\b(begin|commit|rollback|create|alter|drop|grant|revoke|update|insert|delete)\b/i,
+    );
+  }
+  assert.match(preflight, /phase_3b_function_names_available/);
+  assert.match(preflight, /phase_3b_internal_table_names_available/);
+  assert.match(verification, /public_rpc_execute_authenticated_only/);
+  assert.match(verification, /five_internal_tables_marked_and_rls_enabled/);
+  assert.match(verification, /inventory_fingerprint/);
+  assert.match(verification, /image_path_fingerprint/);
+  assert.doesNotMatch(
+    preflight,
+    /\bfrom\s+inventory_private\.inventory_(?:backups|backup_products|backup_product_tags|json_previews|import_batches)\b/i,
+  );
+  assert.doesNotMatch(
+    verification,
+    /\bfrom\s+inventory_private\.inventory_(?:backups|backup_products|backup_product_tags|json_previews|import_batches)\b/i,
+  );
+});

@@ -39,3 +39,36 @@ test("product images preview locally, support paste and crop, then defer upload 
   assert.match(form, /optimizeImageForUpload\(pendingImage\)/);
   assert.match(form, /uploadProductImage\(optimized\)/);
 });
+
+test("product form surfaces client validation and server save failures", async () => {
+  const [form, validations, actions] = await Promise.all([
+    source("../components/admin/product-form.tsx"),
+    source("../lib/validations.ts"),
+    source("../app/actions/products.ts"),
+  ]);
+
+  assert.match(form, /<form\s+noValidate/);
+  assert.match(form, /handleSubmit\(onSubmit, onInvalid\)/);
+  assert.match(form, /role="alert"/);
+  assert.match(form, /無法儲存/);
+  for (const field of [
+    "image_url",
+    "brand_name",
+    "quantity",
+    "category_id",
+    "subcategory_id",
+    "capacity",
+    "expiration_date",
+    "pao_months",
+    "notes",
+  ]) {
+    assert.match(form, new RegExp(`errors\\.${field}\\?\\.message`));
+  }
+
+  assert.match(validations, /extractProductImagePath\(value\) !== null/);
+  assert.match(validations, /z\.literal\(""\),\s*z\.coerce/s);
+  assert.match(validations, /value === "" \|\| value == null \? undefined : value/);
+  assert.match(actions, /productSchema\.safeParse\(raw\)/);
+  assert.match(actions, /\.update\(toDbRow\(values, brandId\)\)[\s\S]*\.select\("id"\)[\s\S]*\.maybeSingle\(\)/);
+  assert.match(actions, /商品未更新/);
+});

@@ -115,12 +115,24 @@ $$;
 revoke all on function public.is_inventory_user() from public, anon;
 grant execute on function public.is_inventory_user() to authenticated;
 
-alter table public.products enable row level security;
-create policy inventory_products_select on public.products for select to authenticated using (public.is_inventory_user());
-create policy inventory_products_insert on public.products for insert to authenticated with check (public.is_inventory_user());
-create policy inventory_products_update on public.products for update to authenticated using (public.is_inventory_user()) with check (public.is_inventory_user());
-create policy inventory_products_delete on public.products for delete to authenticated using (public.is_inventory_user());
-grant select, insert, update, delete on public.products to authenticated;
+do $$
+declare inventory_table text;
+begin
+  foreach inventory_table in array array[
+    'categories','subcategories','brands','tags','products','product_tags'
+  ] loop
+    execute format('alter table public.%I enable row level security', inventory_table);
+    execute format(
+      'create policy "inventory owner access" on public.%I for all to authenticated using (public.is_inventory_user()) with check (public.is_inventory_user())',
+      inventory_table
+    );
+    execute format(
+      'grant select, insert, update, delete on public.%I to authenticated',
+      inventory_table
+    );
+  end loop;
+end
+$$;
 
 insert into auth.users(id,email) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','owner@example.test'),
@@ -132,6 +144,21 @@ insert into storage.objects(bucket_id,name,metadata) values
   ('product-images','products/a.webp','{"size":100}'),
   ('product-images','products/b.webp','{"size":200}'),
   ('product-images','products/c.webp','{"size":300}');
+
+alter table storage.objects enable row level security;
+create policy "inventory owner read product images" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'product-images' and public.is_inventory_user());
+create policy "inventory owner upload product images" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'product-images' and public.is_inventory_user());
+create policy "inventory owner update product images" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'product-images' and public.is_inventory_user())
+  with check (bucket_id = 'product-images' and public.is_inventory_user());
+create policy "inventory owner delete product images" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'product-images' and public.is_inventory_user());
 
 insert into public.categories(id,name) values ('10000000-0000-4000-8000-000000000001','保養');
 insert into public.subcategories(id,category_id,name) values ('11000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001','化妝水');

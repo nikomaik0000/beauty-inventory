@@ -7,6 +7,15 @@ import { requireInventoryUser } from "@/lib/inventory-auth";
 import { deleteProductImageServer } from "@/lib/product-images-server";
 import { productSchema, quantityAdjustmentSchema, type ProductFormValues } from "@/lib/validations";
 
+function parseProductValues(raw: ProductFormValues): ProductFormValues {
+  const result = productSchema.safeParse(raw);
+  if (!result.success) {
+    const detail = result.error.issues[0]?.message ?? "表單資料格式不正確。";
+    throw new Error(`無法儲存：${detail}`);
+  }
+  return result.data;
+}
+
 /** Finds a brand by name (case-insensitive) or creates it: only brands
  * actually in use appear anywhere else in the app. */
 export async function upsertBrandId(name: string): Promise<string | null> {
@@ -32,7 +41,7 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
 
 export async function createProduct(raw: ProductFormValues) {
   const { supabase } = await requireInventoryUser();
-  const values = productSchema.parse(raw);
+  const values = parseProductValues(raw);
   const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
 
   const { error } = await supabase.from("products").insert({
@@ -40,7 +49,7 @@ export async function createProduct(raw: ProductFormValues) {
     opened: false,
     opened_date: null,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`新增商品失敗：${error.message}`);
 
   revalidatePath("/");
   revalidatePath("/admin");
@@ -72,13 +81,25 @@ async function deleteImageIfUnreferenced(
  * Storage Maintenance tool (/admin/settings) cleans up. */
 export async function updateProduct(id: string, raw: ProductFormValues) {
   const { supabase } = await requireInventoryUser();
-  const values = productSchema.parse(raw);
+  const values = parseProductValues(raw);
   const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
 
-  const { data: existing } = await supabase.from("products").select("image_url").eq("id", id).maybeSingle();
+  const { data: existing, error: existingError } = await supabase
+    .from("products")
+    .select("image_url")
+    .eq("id", id)
+    .maybeSingle();
+  if (existingError) throw new Error(`讀取商品失敗：${existingError.message}`);
+  if (!existing) throw new Error("找不到要編輯的商品，請重新整理後再試一次。");
 
-  const { error } = await supabase.from("products").update(toDbRow(values, brandId)).eq("id", id);
-  if (error) throw new Error(error.message);
+  const { data: updated, error } = await supabase
+    .from("products")
+    .update(toDbRow(values, brandId))
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(`儲存商品失敗：${error.message}`);
+  if (!updated) throw new Error("商品未更新，請確認登入狀態後再試一次。");
 
   const newImageUrl = values.image_url || null;
   if (existing?.image_url && existing.image_url !== newImageUrl) {
