@@ -13,7 +13,12 @@ import { ProductFormDialog } from "@/components/admin/product-form-dialog";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { daysUntil, isExpiringSoon, volumeContribution } from "@/lib/utils";
 import { defaultFilters } from "@/lib/types";
-import { openProductForm, PRODUCT_FORM_OPEN_EVENT, type ProductFormRequest } from "@/lib/product-form-events";
+import {
+  openProductForm,
+  PRODUCT_FORM_OPEN_EVENT,
+  PRODUCT_FORM_REFRESH_MARK,
+  type ProductFormRequest,
+} from "@/lib/product-form-events";
 import type {
   Brand,
   Category,
@@ -56,6 +61,18 @@ export function ProductExplorer({
     window.addEventListener(PRODUCT_FORM_OPEN_EVENT, handleOpen);
     return () => window.removeEventListener(PRODUCT_FORM_OPEN_EVENT, handleOpen);
   }, []);
+
+  useEffect(() => {
+    const marks = performance.getEntriesByName(PRODUCT_FORM_REFRESH_MARK, "mark");
+    const latestMark = marks.at(-1);
+    if (!latestMark) return;
+
+    console.info("[product-save:client]", {
+      stage: "refresh-complete",
+      refreshMs: Math.round((performance.now() - latestMark.startTime) * 10) / 10,
+    });
+    performance.clearMarks(PRODUCT_FORM_REFRESH_MARK);
+  }, [products, categories, subcategories]);
 
   useEffect(() => {
     if (!productFormParam) return;

@@ -11,6 +11,7 @@ import { productSchema, type ProductFormValues } from "@/lib/validations";
 import { createProduct, updateProduct } from "@/app/actions/products";
 import { optimizeImageForUpload } from "@/lib/image-optimize";
 import { uploadProductImage } from "@/lib/product-images";
+import { PRODUCT_FORM_REFRESH_MARK } from "@/lib/product-form-events";
 import type { Category, ProductWithRelations, Subcategory } from "@/lib/types";
 
 export function ProductForm({
@@ -20,6 +21,7 @@ export function ProductForm({
   initialProduct,
   modal = false,
   onCancel,
+  onSaved,
   onDirtyChange,
 }: {
   categories: Category[];
@@ -28,6 +30,7 @@ export function ProductForm({
   initialProduct?: ProductWithRelations;
   modal?: boolean;
   onCancel?: () => void;
+  onSaved?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
 }) {
   const router = useRouter();
@@ -37,6 +40,8 @@ export function ProductForm({
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const bypassWarningRef = useRef(false);
   const errorAlertRef = useRef<HTMLDivElement>(null);
+  const submittingRef = useRef(false);
+  const submitStartedAtRef = useRef(0);
   const sourceProduct = product ?? initialProduct;
 
   const {
@@ -137,24 +142,64 @@ export function ProductForm({
   }, []);
 
   const onSubmit = (values: ProductFormValues) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setServerError(null);
+    const clientValidationMs = Math.round(
+      (performance.now() - submitStartedAtRef.current) * 10,
+    ) / 10;
     startTransition(async () => {
+      let imageOptimizeMs = 0;
+      let imageUploadMs = 0;
       try {
-        bypassWarningRef.current = true;
         const submittedValues = { ...values };
         if (pendingImage) {
+          const optimizeStartedAt = performance.now();
           const optimized = await optimizeImageForUpload(pendingImage);
+          imageOptimizeMs = Math.round((performance.now() - optimizeStartedAt) * 10) / 10;
+          const uploadStartedAt = performance.now();
           submittedValues.image_url = await uploadProductImage(optimized);
+          imageUploadMs = Math.round((performance.now() - uploadStartedAt) * 10) / 10;
         }
-        if (product) {
-          await updateProduct(product.id, submittedValues);
-        } else {
-          await createProduct(submittedValues);
-        }
+        const serverActionStartedAt = performance.now();
+        const result = product
+          ? await updateProduct(product.id, submittedValues)
+          : await createProduct(submittedValues);
+        const serverActionMs = Math.round(
+          (performance.now() - serverActionStartedAt) * 10,
+        ) / 10;
+
+        bypassWarningRef.current = true;
+        submittingRef.current = false;
+        const closeStartedAt = performance.now();
+        if (onSaved) onSaved();
+        else router.push("/");
+
+        window.requestAnimationFrame(() => {
+          const modalCloseMs = Math.round((performance.now() - closeStartedAt) * 10) / 10;
+          const clientTotalMs = Math.round(
+            (performance.now() - submitStartedAtRef.current) * 10,
+          ) / 10;
+          console.info("[product-save:client]", {
+            operation: product ? "update" : "create",
+            clientValidationMs,
+            imageOptimizeMs,
+            imageUploadMs,
+            serverActionMs,
+            modalCloseMs,
+            clientTotalMs,
+            server: result.timings,
+            imageChanged: result.imageChanged,
+          });
+          if (onSaved) {
+            performance.clearMarks(PRODUCT_FORM_REFRESH_MARK);
+            performance.mark(PRODUCT_FORM_REFRESH_MARK);
+            router.refresh();
+          }
+        });
       } catch (err) {
         bypassWarningRef.current = false;
-        // NEXT_REDIRECT is thrown by successful server actions; rethrow it
-        if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
+        submittingRef.current = false;
         setServerError(err instanceof Error ? err.message : "發生錯誤，請再試一次。");
       }
     });
@@ -165,13 +210,23 @@ export function ProductForm({
       (error) => typeof error?.message === "string",
     );
     const detail = typeof firstError?.message === "string" ? firstError.message : null;
+    const clientValidationMs = Math.round(
+      (performance.now() - submitStartedAtRef.current) * 10,
+    ) / 10;
+    console.info("[product-save:client]", {
+      stage: "validation-failed",
+      clientValidationMs,
+    });
     setServerError(detail ? `無法儲存：${detail}` : "無法儲存，請檢查表單中標示的欄位。");
   };
 
   return (
     <form
       noValidate
-      onSubmit={handleSubmit(onSubmit, onInvalid)}
+      onSubmit={(event) => {
+        submitStartedAtRef.current = performance.now();
+        void handleSubmit(onSubmit, onInvalid)(event);
+      }}
       onFocusCapture={(event) => {
         if (window.innerWidth >= 640) return;
         const target = event.target as HTMLElement;
@@ -319,6 +374,7 @@ export function ProductForm({
         <Button
           type="button"
           variant="secondary"
+          disabled={pending}
           onClick={() => {
             if (!onCancel && (isDirty || pendingImage) && !confirm("尚有未儲存的變更，確定要離開嗎？")) return;
             bypassWarningRef.current = true;

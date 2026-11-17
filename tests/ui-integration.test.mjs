@@ -72,3 +72,34 @@ test("product form surfaces client validation and server save failures", async (
   assert.match(actions, /\.update\(toDbRow\(values, brandId\)\)[\s\S]*\.select\("id"\)[\s\S]*\.maybeSingle\(\)/);
   assert.match(actions, /商品未更新/);
 });
+
+test("product saves close before one background refresh and expose stage timings", async () => {
+  const [form, dialog, explorer, actions] = await Promise.all([
+    source("../components/admin/product-form.tsx"),
+    source("../components/admin/product-form-dialog.tsx"),
+    source("../components/product-explorer.tsx"),
+    source("../app/actions/products.ts"),
+  ]);
+
+  assert.match(form, /if \(pendingImage\)[\s\S]*optimizeImageForUpload[\s\S]*uploadProductImage/);
+  assert.match(form, /if \(submittingRef\.current\) return/);
+  assert.match(form, /disabled=\{pending\}/);
+  assert.ok(form.indexOf("if (onSaved) onSaved()") < form.indexOf("router.refresh()"));
+  assert.match(form, /clientValidationMs/);
+  assert.match(form, /imageOptimizeMs/);
+  assert.match(form, /imageUploadMs/);
+  assert.match(form, /serverActionMs/);
+  assert.match(form, /modalCloseMs/);
+  assert.match(dialog, /onSaved=\{handleSaved\}/);
+  assert.match(explorer, /stage: "refresh-complete"/);
+  assert.match(explorer, /refreshMs/);
+
+  const updateStart = actions.indexOf("export async function updateProduct");
+  const updateEnd = actions.indexOf("export async function deleteProduct", updateStart);
+  const updateBody = actions.slice(updateStart, updateEnd);
+  assert.match(updateBody, /image_url, brand_id, brand:brands\(name\)/);
+  assert.match(updateBody, /existing\.brand_id/);
+  assert.match(updateBody, /databaseWriteMs/);
+  assert.match(updateBody, /imageCleanupMs/);
+  assert.doesNotMatch(updateBody, /revalidatePath|redirect\(/);
+});

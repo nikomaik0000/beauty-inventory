@@ -20,9 +20,13 @@ export function ProductFormDialog({ open, mode, product, categories, subcategori
     dirtyRef.current = false;
     onClose();
   }, [onClose]);
+  const handleSaved = useCallback(() => {
+    dirtyRef.current = false;
+    onClose();
+  }, [onClose]);
   return (
     <Dialog open={open} onClose={requestClose} title={title} maxWidthClassName="max-w-[720px]" maxHeightClassName="max-h-[88dvh]" viewportPaddingClassName="px-3 py-[max(0.75rem,env(safe-area-inset-top))] sm:p-6" bodyClassName="flex overflow-hidden p-0" animated={false}>
-      <ProductForm key={`${mode}:${product?.id ?? "new"}`} categories={categories} subcategories={subcategories} product={mode === "edit" ? product : undefined} initialProduct={mode === "duplicate" ? product : undefined} modal onCancel={requestClose} onDirtyChange={(value) => { dirtyRef.current = value; }} />
+      <ProductForm key={`${mode}:${product?.id ?? "new"}`} categories={categories} subcategories={subcategories} product={mode === "edit" ? product : undefined} initialProduct={mode === "duplicate" ? product : undefined} modal onCancel={requestClose} onSaved={handleSaved} onDirtyChange={(value) => { dirtyRef.current = value; }} />
     </Dialog>
   );
 }

@@ -1,11 +1,34 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { upsertBrandIdWithClient } from "@/lib/brands-server";
 import { requireInventoryUser } from "@/lib/inventory-auth";
 import { deleteProductImageServer } from "@/lib/product-images-server";
 import { productSchema, quantityAdjustmentSchema, type ProductFormValues } from "@/lib/validations";
+
+export interface ProductSaveTimings {
+  authMs: number;
+  validationMs: number;
+  productLookupMs: number;
+  brandResolutionMs: number;
+  databaseWriteMs: number;
+  imageCleanupMs: number;
+  totalMs: number;
+}
+
+export interface ProductSaveResult {
+  timings: ProductSaveTimings;
+  imageChanged: boolean;
+}
+
+function millisecondsSince(startedAt: number) {
+  return Math.round((performance.now() - startedAt) * 10) / 10;
+}
+
+function reportSaveTimings(operation: "create" | "update", result: ProductSaveResult) {
+  console.info("[product-save:server]", { operation, ...result });
+  return result;
+}
 
 function parseProductValues(raw: ProductFormValues): ProductFormValues {
   const result = productSchema.safeParse(raw);
@@ -39,21 +62,39 @@ function toDbRow(values: ProductFormValues, brandId: string | null) {
   };
 }
 
-export async function createProduct(raw: ProductFormValues) {
+export async function createProduct(raw: ProductFormValues): Promise<ProductSaveResult> {
+  const totalStartedAt = performance.now();
+  const authStartedAt = performance.now();
   const { supabase } = await requireInventoryUser();
+  const authMs = millisecondsSince(authStartedAt);
+  const validationStartedAt = performance.now();
   const values = parseProductValues(raw);
+  const validationMs = millisecondsSince(validationStartedAt);
+  const brandStartedAt = performance.now();
   const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
+  const brandResolutionMs = millisecondsSince(brandStartedAt);
 
+  const writeStartedAt = performance.now();
   const { error } = await supabase.from("products").insert({
     ...toDbRow(values, brandId),
     opened: false,
     opened_date: null,
   });
   if (error) throw new Error(`新增商品失敗：${error.message}`);
+  const databaseWriteMs = millisecondsSince(writeStartedAt);
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  redirect("/");
+  return reportSaveTimings("create", {
+    imageChanged: Boolean(values.image_url),
+    timings: {
+      authMs,
+      validationMs,
+      productLookupMs: 0,
+      brandResolutionMs,
+      databaseWriteMs,
+      imageCleanupMs: 0,
+      totalMs: millisecondsSince(totalStartedAt),
+    },
+  });
 }
 
 async function deleteImageIfUnreferenced(
@@ -79,19 +120,38 @@ async function deleteImageIfUnreferenced(
  * no image at all if the new upload or the DB write then fails; doing
  * it this way, the worst case is a harmless orphaned file, which the
  * Storage Maintenance tool (/admin/settings) cleans up. */
-export async function updateProduct(id: string, raw: ProductFormValues) {
+export async function updateProduct(id: string, raw: ProductFormValues): Promise<ProductSaveResult> {
+  const totalStartedAt = performance.now();
+  const authStartedAt = performance.now();
   const { supabase } = await requireInventoryUser();
+  const authMs = millisecondsSince(authStartedAt);
+  const validationStartedAt = performance.now();
   const values = parseProductValues(raw);
-  const brandId = await upsertBrandIdWithClient(supabase, values.brand_name ?? "");
+  const validationMs = millisecondsSince(validationStartedAt);
 
+  const lookupStartedAt = performance.now();
   const { data: existing, error: existingError } = await supabase
     .from("products")
-    .select("image_url")
+    .select("image_url, brand_id, brand:brands(name)")
     .eq("id", id)
     .maybeSingle();
   if (existingError) throw new Error(`讀取商品失敗：${existingError.message}`);
   if (!existing) throw new Error("找不到要編輯的商品，請重新整理後再試一次。");
+  const productLookupMs = millisecondsSince(lookupStartedAt);
 
+  const requestedBrandName = (values.brand_name ?? "").trim();
+  const existingBrand = Array.isArray(existing.brand) ? existing.brand[0] : existing.brand;
+  const existingBrandName = existingBrand?.name?.trim() ?? "";
+  const brandStartedAt = performance.now();
+  const brandId = !requestedBrandName
+    ? null
+    : existing.brand_id &&
+        existingBrandName.toLocaleLowerCase() === requestedBrandName.toLocaleLowerCase()
+      ? existing.brand_id
+      : await upsertBrandIdWithClient(supabase, requestedBrandName);
+  const brandResolutionMs = millisecondsSince(brandStartedAt);
+
+  const writeStartedAt = performance.now();
   const { data: updated, error } = await supabase
     .from("products")
     .update(toDbRow(values, brandId))
@@ -100,15 +160,28 @@ export async function updateProduct(id: string, raw: ProductFormValues) {
     .maybeSingle();
   if (error) throw new Error(`儲存商品失敗：${error.message}`);
   if (!updated) throw new Error("商品未更新，請確認登入狀態後再試一次。");
+  const databaseWriteMs = millisecondsSince(writeStartedAt);
 
   const newImageUrl = values.image_url || null;
-  if (existing?.image_url && existing.image_url !== newImageUrl) {
+  const imageChanged = (existing.image_url ?? null) !== newImageUrl;
+  const imageCleanupStartedAt = performance.now();
+  if (existing.image_url && imageChanged) {
     await deleteImageIfUnreferenced(supabase, existing.image_url);
   }
+  const imageCleanupMs = millisecondsSince(imageCleanupStartedAt);
 
-  revalidatePath("/");
-  revalidatePath("/admin");
-  redirect("/");
+  return reportSaveTimings("update", {
+    imageChanged,
+    timings: {
+      authMs,
+      validationMs,
+      productLookupMs,
+      brandResolutionMs,
+      databaseWriteMs,
+      imageCleanupMs,
+      totalMs: millisecondsSince(totalStartedAt),
+    },
+  });
 }
 
 export async function deleteProduct(id: string) {
