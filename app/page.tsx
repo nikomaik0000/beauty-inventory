@@ -7,12 +7,12 @@ import { getCategories, getProductsWithRelations, getSubcategories, usedBrands }
 export const revalidate = 0;
 
 export default async function HomePage() {
-  await requireInventoryUser({ redirectToLogin: true });
+  const { supabase } = await requireInventoryUser({ redirectToLogin: true });
 
   const [products, categories, subcategories] = await Promise.all([
-    getProductsWithRelations(),
-    getCategories(),
-    getSubcategories(),
+    getProductsWithRelations(supabase),
+    getCategories(supabase),
+    getSubcategories(supabase),
   ]);
 
   const brands = usedBrands(products);
