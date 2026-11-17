@@ -31,6 +31,8 @@ test("mobile navigation keeps its hit area while normalizing icon geometry", asy
   assert.match(navigation, /min-h-12/);
   assert.match(navigation, /safe-area-inset-bottom/);
   assert.match(navigation, /visualViewport/);
+  assert.match(navigation, /bg-surface/);
+  assert.doesNotMatch(navigation, /backdrop-blur/);
 });
 
 test("mobile cards discriminate vertical scrolling and expose bounded swipe actions", async () => {

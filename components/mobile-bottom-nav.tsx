@@ -47,7 +47,7 @@ export function MobileBottomNav() {
     <nav
       aria-label="主要導覽"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-2 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur sm:hidden",
+        "fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-2 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-1.5 sm:hidden",
         keyboardOpen && "hidden",
       )}
     >

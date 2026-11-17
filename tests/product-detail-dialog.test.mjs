@@ -27,13 +27,28 @@ test("dialog keeps header and footer outside its scrollable content and restores
   const footerIndex = dialog.indexOf('border-t border-divider');
 
   assert.ok(headerIndex >= 0 && contentIndex > headerIndex && footerIndex > contentIndex);
-  assert.match(dialog, /document\.body\.style\.position = "fixed"/);
+  assert.match(dialog, /document\.documentElement\.style\.overflow = "hidden"/);
+  assert.match(dialog, /document\.body\.style\.overflow = "hidden"/);
   assert.match(dialog, /useLayoutEffect/);
   assert.match(dialog, /scrollbarWidth/);
-  assert.match(dialog, /paddingRight/);
-  assert.match(dialog, /window\.scrollTo\(0, bodyLockScrollY\)/);
+  assert.match(dialog, /CSS\.supports\("scrollbar-gutter: stable"\)/);
+  assert.doesNotMatch(dialog, /document\.body\.style\.position = "fixed"/);
+  assert.doesNotMatch(dialog, /window\.scrollTo\(0, bodyLockScrollY\)/);
   assert.match(dialog, /bodyLockCount/);
   assert.match(dialog, /previouslyFocused\.focus\(\{ preventScroll: true \}\)/);
+});
+
+test("product action menu is positioned before paint and closes without an exit overlay", async () => {
+  const [dropdown, menu] = await Promise.all([
+    source("../components/ui/dropdown.tsx"),
+    source("../components/product-actions-menu.tsx"),
+  ]);
+
+  assert.match(dropdown, /const nextPosition = calculatePosition\(\)/);
+  assert.ok(dropdown.indexOf("setPosition(nextPosition)") < dropdown.indexOf("setOpen(true)"));
+  assert.match(dropdown, /animated \? \(/);
+  assert.match(menu, /animated=\{false\}/);
+  assert.match(menu, /PRODUCT_ACTION_OPTIONS/);
 });
 
 test("dialog uses a coordinated opacity-only fade and respects reduced motion", async () => {

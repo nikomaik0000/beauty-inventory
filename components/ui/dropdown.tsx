@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
@@ -50,6 +50,7 @@ export function Dropdown<T extends string>({
   align = "left",
   ariaLabel,
   boundaryRef,
+  animated = true,
 }: {
   value: T;
   options: DropdownOption<T>[];
@@ -61,6 +62,9 @@ export function Dropdown<T extends string>({
    * e.g. a dialog's scrollable body, so the popup never overlaps the
    * dialog's fixed footer. Falls back to the viewport when omitted. */
   boundaryRef?: RefObject<HTMLElement | null>;
+  /** Disable popup enter/exit animation for action menus that immediately
+   * open another overlay. Positioning and appearance remain unchanged. */
+  animated?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<PopupPosition | null>(null);
@@ -69,6 +73,40 @@ export function Dropdown<T extends string>({
   const listRef = useRef<HTMLUListElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const selected = options.find((o) => o.value === value);
+
+  const calculatePosition = useCallback((): PopupPosition | null => {
+    const trigger = containerRef.current;
+    if (!trigger) return null;
+    const rect = trigger.getBoundingClientRect();
+    const boundary = boundaryRef?.current?.getBoundingClientRect();
+    const viewportBottom = boundary ? Math.min(boundary.bottom, window.innerHeight) : window.innerHeight;
+    const viewportTop = boundary ? Math.max(boundary.top, 0) : 0;
+    const spaceBelow = viewportBottom - rect.bottom - POPUP_GAP;
+    const spaceAbove = rect.top - viewportTop - POPUP_GAP;
+    const openUpward = spaceBelow < POPUP_MIN_HEIGHT && spaceAbove > spaceBelow;
+
+    return {
+      left: align === "right" ? rect.right - Math.max(rect.width, 160) : rect.left,
+      width: rect.width,
+      top: openUpward ? undefined : rect.bottom + POPUP_GAP,
+      bottom: openUpward ? window.innerHeight - rect.top + POPUP_GAP : undefined,
+      maxHeight: Math.max(Math.min(POPUP_MAX_HEIGHT, openUpward ? spaceAbove : spaceBelow), POPUP_MIN_HEIGHT),
+    };
+  }, [align, boundaryRef]);
+
+  const openPopup = useCallback(() => {
+    const nextPosition = calculatePosition();
+    if (!nextPosition) return;
+    // Position and visibility are committed in the same React batch, so a
+    // portaled menu is never painted once at an unset or stale coordinate.
+    setPosition(nextPosition);
+    setOpen(true);
+  }, [calculatePosition]);
+
+  const togglePopup = useCallback(() => {
+    if (open) setOpen(false);
+    else openPopup();
+  }, [open, openPopup]);
 
   useEffect(() => {
     if (open) {
@@ -110,7 +148,7 @@ export function Dropdown<T extends string>({
     if (e.key === "ArrowDown") {
       e.preventDefault();
       if (!open) {
-        setOpen(true);
+        openPopup();
         return;
       }
       setHighlightedIndex((i) => Math.min(i + 1, options.length - 1));
@@ -119,7 +157,7 @@ export function Dropdown<T extends string>({
     if (e.key === "ArrowUp") {
       e.preventDefault();
       if (!open) {
-        setOpen(true);
+        openPopup();
         return;
       }
       setHighlightedIndex((i) => Math.max(i - 1, 0));
@@ -145,23 +183,16 @@ export function Dropdown<T extends string>({
     if (!open) return;
 
     function updatePosition() {
-      const trigger = containerRef.current;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const boundary = boundaryRef?.current?.getBoundingClientRect();
-      const viewportBottom = boundary ? Math.min(boundary.bottom, window.innerHeight) : window.innerHeight;
-      const viewportTop = boundary ? Math.max(boundary.top, 0) : 0;
-      const spaceBelow = viewportBottom - rect.bottom - POPUP_GAP;
-      const spaceAbove = rect.top - viewportTop - POPUP_GAP;
-      const openUpward = spaceBelow < POPUP_MIN_HEIGHT && spaceAbove > spaceBelow;
-
-      setPosition({
-        left: align === "right" ? rect.right - Math.max(rect.width, 160) : rect.left,
-        width: rect.width,
-        top: openUpward ? undefined : rect.bottom + POPUP_GAP,
-        bottom: openUpward ? window.innerHeight - rect.top + POPUP_GAP : undefined,
-        maxHeight: Math.max(Math.min(POPUP_MAX_HEIGHT, openUpward ? spaceAbove : spaceBelow), POPUP_MIN_HEIGHT),
-      });
+      const nextPosition = calculatePosition();
+      if (!nextPosition) return;
+      setPosition((current) => current
+        && current.left === nextPosition.left
+        && current.width === nextPosition.width
+        && current.top === nextPosition.top
+        && current.bottom === nextPosition.bottom
+        && current.maxHeight === nextPosition.maxHeight
+        ? current
+        : nextPosition);
     }
 
     updatePosition();
@@ -171,16 +202,57 @@ export function Dropdown<T extends string>({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open, align, boundaryRef]);
+  }, [open, calculatePosition]);
+
+  const popupStyle = position ? {
+    position: "fixed" as const,
+    left: position.left,
+    width: align === "right" ? undefined : position.width,
+    minWidth: align === "right" ? Math.max(position.width, 160) : undefined,
+    top: position.top,
+    bottom: position.bottom,
+    maxHeight: position.maxHeight,
+  } : undefined;
+
+  const popupContents = options.map((opt, idx) => {
+    const isSelected = opt.value === value;
+    const isHighlighted = idx === highlightedIndex;
+    return (
+      <li key={opt.value}>
+        <button
+          ref={(el) => {
+            optionRefs.current[idx] = el;
+          }}
+          type="button"
+          role="option"
+          aria-selected={isSelected}
+          onMouseEnter={() => setHighlightedIndex(idx)}
+          onClick={() => {
+            onChange(opt.value);
+            setOpen(false);
+          }}
+          className={cn(
+            "flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-sm transition-colors duration-fast hover:bg-surfaceMuted",
+            isHighlighted && "bg-surfaceMuted",
+            isSelected ? "font-medium text-accentStrong" : "text-textPrimary",
+          )}
+        >
+          <span className="truncate">{opt.label}</span>
+          {isSelected && <Check size={14} strokeWidth={1.75} className="shrink-0" />}
+        </button>
+      </li>
+    );
+  });
 
   return (
     <div ref={containerRef} className="relative" onKeyDown={handleKeyDown}>
-      {renderTrigger({ open, selected, toggle: () => setOpen((v) => !v) })}
+      {renderTrigger({ open, selected, toggle: togglePopup })}
 
       {typeof document !== "undefined" &&
         createPortal(
-          <AnimatePresence>
-            {open && position && (
+          animated ? (
+            <AnimatePresence>
+              {open && position && (
               <motion.ul
                 ref={listRef}
                 role="listbox"
@@ -189,49 +261,24 @@ export function Dropdown<T extends string>({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: animation.motion.fast, ease: animation.motion.ease }}
-                style={{
-                  position: "fixed",
-                  left: position.left,
-                  width: align === "right" ? undefined : position.width,
-                  minWidth: align === "right" ? Math.max(position.width, 160) : undefined,
-                  top: position.top,
-                  bottom: position.bottom,
-                  maxHeight: position.maxHeight,
-                }}
+                style={popupStyle}
                 className="z-50 min-w-[160px] overflow-y-auto rounded-dropdown border border-border bg-surface py-1 shadow-dropdown"
               >
-                {options.map((opt, idx) => {
-                  const isSelected = opt.value === value;
-                  const isHighlighted = idx === highlightedIndex;
-                  return (
-                    <li key={opt.value}>
-                      <button
-                        ref={(el) => {
-                          optionRefs.current[idx] = el;
-                        }}
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        onMouseEnter={() => setHighlightedIndex(idx)}
-                        onClick={() => {
-                          onChange(opt.value);
-                          setOpen(false);
-                        }}
-                        className={cn(
-                          "flex w-full items-center justify-between gap-2 px-3.5 py-2 text-left text-sm transition-colors duration-fast hover:bg-surfaceMuted",
-                          isHighlighted && "bg-surfaceMuted",
-                          isSelected ? "font-medium text-accentStrong" : "text-textPrimary",
-                        )}
-                      >
-                        <span className="truncate">{opt.label}</span>
-                        {isSelected && <Check size={14} strokeWidth={1.75} className="shrink-0" />}
-                      </button>
-                    </li>
-                  );
-                })}
+                {popupContents}
               </motion.ul>
-            )}
-          </AnimatePresence>,
+              )}
+            </AnimatePresence>
+          ) : open && position ? (
+            <ul
+              ref={listRef}
+              role="listbox"
+              aria-label={ariaLabel}
+              style={popupStyle}
+              className="z-50 min-w-[160px] overflow-y-auto rounded-dropdown border border-border bg-surface py-1 shadow-dropdown"
+            >
+              {popupContents}
+            </ul>
+          ) : null,
           document.body,
         )}
     </div>

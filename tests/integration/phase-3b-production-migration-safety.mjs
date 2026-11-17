@@ -89,11 +89,23 @@ try {
   const production = join(repositoryRoot, "supabase/phase-3b-json-import-backup.PRODUCTION.sql");
   const rollbackReview = join(repositoryRoot, "supabase/phase-3b-json-import-backup-rollback.REVIEW.sql");
   const verification = join(repositoryRoot, "supabase/phase-3b-json-import-backup-post-install.READONLY.sql");
+  const targetedPreflight = join(repositoryRoot, "supabase/phase-3b-restore-targeted-preflight.READONLY.sql");
+  const targetedProduction = join(repositoryRoot, "supabase/phase-3b-restore-targeted.PRODUCTION.sql");
+  const targetedRollbackReview = join(repositoryRoot, "supabase/phase-3b-restore-targeted-rollback.REVIEW.sql");
+  const targetedVerification = join(repositoryRoot, "supabase/phase-3b-restore-targeted-post-install.READONLY.sql");
+  const targetedRestore = join(testDirectory, "phase-3b-targeted-restore.sql");
   const committedRollback = join(temporaryRoot, "phase-3b-rollback.sql");
+  const committedTargetedRollback = join(temporaryRoot, "phase-3b-targeted-rollback.sql");
   const rollbackSource = readFileSync(rollbackReview, "utf8");
   const committedSource = rollbackSource.replace(/rollback;\s*$/i, "commit;\n");
   if (committedSource === rollbackSource) throw new Error("Rollback review safe default is missing");
   writeFileSync(committedRollback, committedSource);
+  const targetedRollbackSource = readFileSync(targetedRollbackReview, "utf8");
+  const committedTargetedSource = targetedRollbackSource.replace(/rollback;\s*$/i, "commit;\n");
+  if (committedTargetedSource === targetedRollbackSource) {
+    throw new Error("Targeted restore rollback review safe default is missing");
+  }
+  writeFileSync(committedTargetedRollback, committedTargetedSource);
 
   sqlFile(setup);
   sql(`
@@ -151,11 +163,25 @@ try {
   if (verificationResult.stdout.includes("FAIL")) {
     throw new Error(`Installed Phase 3B verification reported a failure:\n${verificationResult.stdout}`);
   }
+  const targetedPreflightResult = sqlFile(targetedPreflight);
+  if (targetedPreflightResult.stdout.includes("FAIL")) {
+    throw new Error(`Targeted restore preflight reported a failure:\n${targetedPreflightResult.stdout}`);
+  }
+  sqlFile(targetedProduction);
+  const targetedVerificationResult = sqlFile(targetedVerification);
+  if (targetedVerificationResult.stdout.includes("FAIL")) {
+    throw new Error(`Targeted restore verification reported a failure:\n${targetedVerificationResult.stdout}`);
+  }
+  assertSql(
+    "obj_description(to_regprocedure('public.commit_inventory_backup_restore(uuid,uuid,text)'),'pg_proc')='beauty-inventory:phase-3b:commit_inventory_backup_restore:v2'",
+    "targeted restore v2 installed",
+  );
   sql(`
     delete from public.products where name like 'Preflight product %';
     delete from storage.objects where bucket_id='product-images' and name like 'preflight/%';
   `);
   sqlFile(core);
+  sqlFile(targetedRestore);
   console.log("PASS Phase 3B production install and core RPC checks");
 
   const postCoreFingerprint = scalar(`select md5(
@@ -164,6 +190,33 @@ try {
   )`);
   const backupCount = Number(scalar("select count(*) from inventory_private.inventory_backups"));
   if (backupCount < 1) throw new Error("Core checks did not create Phase 3B snapshots");
+
+  console.log("RUN Phase 3B targeted restore guarded rollback and reinstall");
+  sqlFile(targetedRollbackReview);
+  assertSql(
+    "obj_description(to_regprocedure('public.commit_inventory_backup_restore(uuid,uuid,text)'),'pg_proc')='beauty-inventory:phase-3b:commit_inventory_backup_restore:v2'",
+    "safe-default targeted rollback retained v2",
+  );
+  sqlFile(committedTargetedRollback);
+  assertSql(
+    "obj_description(to_regprocedure('public.commit_inventory_backup_restore(uuid,uuid,text)'),'pg_proc')='beauty-inventory:phase-3b:commit_inventory_backup_restore:v1'",
+    "authorized targeted rollback restored v1",
+  );
+  assertSql(`'${postCoreFingerprint}'=md5(
+    coalesce((select jsonb_agg(to_jsonb(p) order by p.id)::text from public.products p),'[]') ||
+    coalesce((select jsonb_agg(to_jsonb(pt) order by pt.product_id,pt.tag_id)::text from public.product_tags pt),'[]')
+  )`, "targeted rollback preserved product state");
+  sqlFile(targetedProduction);
+  assertSql(
+    "obj_description(to_regprocedure('public.commit_inventory_backup_restore(uuid,uuid,text)'),'pg_proc')='beauty-inventory:phase-3b:commit_inventory_backup_restore:v2'",
+    "targeted restore reinstall restored v2",
+  );
+  sqlFile(committedTargetedRollback);
+  assertSql(
+    "obj_description(to_regprocedure('public.commit_inventory_backup_restore(uuid,uuid,text)'),'pg_proc')='beauty-inventory:phase-3b:commit_inventory_backup_restore:v1'",
+    "second targeted rollback left full Phase 3B rollback-compatible v1",
+  );
+  console.log("PASS Phase 3B targeted restore guarded rollback and reinstall");
 
   console.log("RUN Phase 3B guarded rollback and reinstall");
   sqlFile(rollbackReview);
@@ -177,6 +230,7 @@ try {
   )`, "rollback preserved product state");
   assertSql("(select payload from other_site.records where id=1)='must remain unchanged'", "rollback preserved other-site data");
   sqlFile(production);
+  sqlFile(targetedProduction);
   console.log("PASS Phase 3B guarded rollback and reinstall");
 } finally {
   if (clusterStarted) {

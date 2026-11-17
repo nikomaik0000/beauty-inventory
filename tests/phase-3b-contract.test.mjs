@@ -34,8 +34,44 @@ test("Phase 3B restore snapshots current state and restores atomically inside on
   const restoreEnd = sql.indexOf("create or replace function public.inventory_referenced_image_paths");
   const body = sql.slice(restoreStart, restoreEnd);
   assert.ok(body.indexOf("create_product_backup('restore'") < body.indexOf("delete from public.products"));
+  assert.doesNotMatch(body, /delete from public\.products\s*;/i);
+  assert.match(body, /delete from public\.products product_row\s+where/i);
+  assert.match(body, /delete from public\.product_tags product_tag\s+where/i);
   assert.match(body, /insert into public\.product_tags/);
   assert.match(body, /p_confirmation_text<>'RESTORE'/);
+});
+
+test("targeted restore production patch is incremental, guarded, and reversible by review only", async () => {
+  const [forward, rollback, preflight, postInstall] = await Promise.all([
+    source("../supabase/phase-3b-restore-targeted.PRODUCTION.sql"),
+    source("../supabase/phase-3b-restore-targeted-rollback.REVIEW.sql"),
+    source("../supabase/phase-3b-restore-targeted-preflight.READONLY.sql"),
+    source("../supabase/phase-3b-restore-targeted-post-install.READONLY.sql"),
+  ]);
+  assert.match(forward, /commit_inventory_backup_restore:v1/);
+  assert.match(forward, /commit_inventory_backup_restore:v2/);
+  const replacement = forward.slice(
+    forward.indexOf("create or replace function public.commit_inventory_backup_restore"),
+    forward.indexOf("comment on function public.commit_inventory_backup_restore"),
+  );
+  assert.match(replacement, /delete from public\.products product_row\s+where/i);
+  assert.match(replacement, /delete from public\.product_tags product_tag\s+where/i);
+  assert.doesNotMatch(replacement, /delete from public\.products\s*;/i);
+  assert.match(forward, /commit;\s*$/i);
+  assert.match(rollback, /safeupdate incompatibility/i);
+  assert.match(rollback, /rollback;\s*$/i);
+  assert.match(postInstall, /d59ac341a62ad3fe7be363a278355bc5/);
+  assert.match(postInstall, /restore_rpc_body_fingerprint/);
+
+  for (const readonlySql of [preflight, postInstall]) {
+    const statementsOnly = readonlySql
+      .replace(/--[^\n]*/g, "")
+      .replace(/'(?:''|[^'])*'/g, "''");
+    assert.doesNotMatch(
+      statementsOnly,
+      /\b(begin|commit|rollback|create|alter|drop|grant|revoke|update|insert|delete)\b/i,
+    );
+  }
 });
 
 test("RPC execution is denied to anon and guarded by the database allowlist", async () => {

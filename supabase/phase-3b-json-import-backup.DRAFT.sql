@@ -498,12 +498,87 @@ begin
   if p_confirmation_text<>'RESTORE' then raise exception 'restore confirmation mismatch'; end if;
   v_before:=inventory_private.create_product_backup('restore',(v_preview.summary->>'new')::integer+(v_preview.summary->>'update')::integer+(v_preview.summary->>'delete')::integer);
 
-  delete from public.products;
+  -- Rebuild only rows whose restorable values differ, plus rows that do not
+  -- exist in the selected snapshot.  Keeping unchanged rows in place avoids
+  -- unnecessary DELETE/INSERT work and remains compatible with Supabase's
+  -- safeupdate guard (which rejects DELETE without a WHERE clause).
+  delete from public.products product_row
+  where not exists (
+    select 1
+    from inventory_private.inventory_backup_products backup_product
+    where backup_product.backup_id = v_preview.backup_id
+      and backup_product.product_id = product_row.id
+  )
+  or exists (
+    select 1
+    from inventory_private.inventory_backup_products backup_product
+    where backup_product.backup_id = v_preview.backup_id
+      and backup_product.product_id = product_row.id
+      and (backup_product.row_data - 'updated_at') <>
+          (inventory_private.product_snapshot(product_row) - 'updated_at')
+  );
+
   insert into public.products(id,name,brand_id,category_id,subcategory_id,image_url,expiration_type,expiration_date,opened,opened_date,pao_months,capacity,quantity,notes,created_at,updated_at)
   select (row_data->>'id')::uuid,row_data->>'name',nullif(row_data->>'brand_id','')::uuid,nullif(row_data->>'category_id','')::uuid,nullif(row_data->>'subcategory_id','')::uuid,row_data->>'image_url',(row_data->>'expiration_type')::public.expiration_type,nullif(row_data->>'expiration_date','')::date,(row_data->>'opened')::boolean,nullif(row_data->>'opened_date','')::date,(row_data->>'pao_months')::integer,(row_data->>'capacity')::numeric,(row_data->>'quantity')::integer,row_data->>'notes',(row_data->>'created_at')::timestamptz,(row_data->>'updated_at')::timestamptz
-  from inventory_private.inventory_backup_products where backup_id=v_preview.backup_id;
+  from inventory_private.inventory_backup_products backup_product
+  where backup_product.backup_id = v_preview.backup_id
+    and not exists (
+      select 1 from public.products product_row
+      where product_row.id = backup_product.product_id
+    );
+
+  delete from public.product_tags product_tag
+  where not exists (
+    select 1
+    from inventory_private.inventory_backup_product_tags backup_tag
+    where backup_tag.backup_id = v_preview.backup_id
+      and backup_tag.product_id = product_tag.product_id
+      and backup_tag.tag_id = product_tag.tag_id
+  );
+
   insert into public.product_tags(product_id,tag_id)
-  select product_id,tag_id from inventory_private.inventory_backup_product_tags where backup_id=v_preview.backup_id;
+  select backup_tag.product_id,backup_tag.tag_id
+  from inventory_private.inventory_backup_product_tags backup_tag
+  where backup_tag.backup_id = v_preview.backup_id
+    and not exists (
+      select 1 from public.product_tags product_tag
+      where product_tag.product_id = backup_tag.product_id
+        and product_tag.tag_id = backup_tag.tag_id
+    );
+
+  if exists (
+    select 1 from public.products product_row
+    where not exists (
+      select 1 from inventory_private.inventory_backup_products backup_product
+      where backup_product.backup_id = v_preview.backup_id
+        and backup_product.product_id = product_row.id
+        and (backup_product.row_data - 'updated_at') =
+            (inventory_private.product_snapshot(product_row) - 'updated_at')
+    )
+  ) or exists (
+    select 1 from inventory_private.inventory_backup_products backup_product
+    where backup_product.backup_id = v_preview.backup_id
+      and not exists (
+        select 1 from public.products product_row
+        where product_row.id = backup_product.product_id
+      )
+  ) or exists (
+    (select product_tag.product_id, product_tag.tag_id
+     from public.product_tags product_tag
+     except
+     select backup_tag.product_id, backup_tag.tag_id
+     from inventory_private.inventory_backup_product_tags backup_tag
+     where backup_tag.backup_id = v_preview.backup_id)
+    union all
+    (select backup_tag.product_id, backup_tag.tag_id
+     from inventory_private.inventory_backup_product_tags backup_tag
+     where backup_tag.backup_id = v_preview.backup_id
+     except
+     select product_tag.product_id, product_tag.tag_id
+     from public.product_tags product_tag)
+  ) then
+    raise exception 'restore postcondition failed';
+  end if;
 
   v_result:=jsonb_build_object('status','applied','operation','restore','created',(v_preview.summary->>'new')::integer,'updated',(v_preview.summary->>'update')::integer,'deleted',(v_preview.summary->>'delete')::integer,'unchanged',(v_preview.summary->>'unchanged')::integer,'backupId',v_before);
   insert into inventory_private.inventory_import_batches values(v_user,p_idempotency_key,p_preview_token,'restore',v_result,now());

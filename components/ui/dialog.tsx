@@ -180,37 +180,43 @@ export function Dialog({
 
 let bodyLockCount = 0;
 const dialogStack: symbol[] = [];
-let bodyLockScrollY = 0;
-let bodyLockPrevious: Record<string, string> | null = null;
+let bodyLockPrevious: {
+  documentOverflow: string;
+  bodyOverflow: string;
+  bodyPaddingRight: string;
+} | null = null;
 
 function lockBodyScroll() {
   bodyLockCount += 1;
   if (bodyLockCount > 1) return;
-  bodyLockScrollY = window.scrollY;
   bodyLockPrevious = {
-    overflow: document.body.style.overflow,
-    position: document.body.style.position,
-    top: document.body.style.top,
-    width: document.body.style.width,
-    paddingRight: document.body.style.paddingRight,
+    documentOverflow: document.documentElement.style.overflow,
+    bodyOverflow: document.body.style.overflow,
+    bodyPaddingRight: document.body.style.paddingRight,
   };
+
   const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-  const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+  const stableScrollbarGutter = typeof CSS !== "undefined"
+    && CSS.supports("scrollbar-gutter: stable");
+
+  // Lock the actual scrolling element without converting the entire body to a
+  // fixed-position layer. The former fixed/top/width rewrite caused a full
+  // page recomposite (and a visible horizontal jump) whenever the first modal
+  // opened. `scrollbar-gutter: stable` in globals.css already reserves the
+  // desktop gutter; older browsers receive the padding fallback below.
+  document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${bodyLockScrollY}px`;
-  document.body.style.width = "100%";
-  document.body.style.paddingRight = `${paddingRight + scrollbarWidth}px`;
+  if (!stableScrollbarGutter && scrollbarWidth > 0) {
+    const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+    document.body.style.paddingRight = `${paddingRight + scrollbarWidth}px`;
+  }
 }
 
 function unlockBodyScroll() {
   bodyLockCount = Math.max(0, bodyLockCount - 1);
   if (bodyLockCount > 0 || !bodyLockPrevious) return;
-  document.body.style.overflow = bodyLockPrevious.overflow;
-  document.body.style.position = bodyLockPrevious.position;
-  document.body.style.top = bodyLockPrevious.top;
-  document.body.style.width = bodyLockPrevious.width;
-  document.body.style.paddingRight = bodyLockPrevious.paddingRight;
+  document.documentElement.style.overflow = bodyLockPrevious.documentOverflow;
+  document.body.style.overflow = bodyLockPrevious.bodyOverflow;
+  document.body.style.paddingRight = bodyLockPrevious.bodyPaddingRight;
   bodyLockPrevious = null;
-  window.scrollTo(0, bodyLockScrollY);
 }

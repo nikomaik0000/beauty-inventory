@@ -11,6 +11,12 @@ import { openProductForm } from "@/lib/product-form-events";
 
 type ProductAction = "edit" | "duplicate" | "delete";
 
+const PRODUCT_ACTION_OPTIONS = [
+  { value: "edit", label: "編輯" },
+  { value: "duplicate", label: "複製" },
+  { value: "delete", label: "刪除" },
+] satisfies Array<{ value: ProductAction; label: string }>;
+
 export function ProductActionsMenu({
   product,
   onDeleted,
@@ -53,11 +59,8 @@ export function ProductActionsMenu({
         value={"" as ProductAction}
         ariaLabel={`${product.name} 操作`}
         align="right"
-        options={[
-          { value: "edit", label: "編輯" },
-          { value: "duplicate", label: "複製" },
-          { value: "delete", label: "刪除" },
-        ]}
+        options={PRODUCT_ACTION_OPTIONS}
+        animated={false}
         onChange={handleAction}
         renderTrigger={({ open, toggle }) => (
           <button
