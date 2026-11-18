@@ -12,6 +12,7 @@ import { ProductDetailDialog } from "@/components/product-detail-dialog";
 import { ProductFormDialog } from "@/components/admin/product-form-dialog";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import { daysUntil, isExpiringSoon, volumeContribution } from "@/lib/utils";
+import { filterProducts } from "@/lib/product-filters";
 import { defaultFilters } from "@/lib/types";
 import {
   openProductForm,
@@ -102,16 +103,7 @@ export function ProductExplorer({
     (filters.expiringSoonOnly ? 1 : 0);
 
   const filtered = useMemo(() => {
-    const search = filters.search.trim().toLowerCase();
-
-    return products.filter((p) => {
-      if (search && !p.name.toLowerCase().includes(search)) return false;
-      if (filters.categoryId && p.category_id !== filters.categoryId) return false;
-      if (filters.subcategoryId && p.subcategory_id !== filters.subcategoryId) return false;
-      if (filters.brandId && p.brand_id !== filters.brandId) return false;
-      if (filters.expiringSoonOnly && !isExpiringSoon(p)) return false;
-      return true;
-    });
+    return filterProducts(products, filters, isExpiringSoon);
   }, [products, filters]);
 
   const sorted = useMemo(() => {
