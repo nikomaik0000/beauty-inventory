@@ -186,13 +186,21 @@ function lockBodyScroll() {
     bodyPaddingRight: document.body.style.paddingRight,
   };
 
+  // The root already reserves scrollbar space via scrollbar-gutter: stable.
+  // Adding body padding on top of that reserved gutter shifts centered desktop
+  // layouts horizontally when a dialog opens. Only compensate on browsers
+  // without a stable root gutter.
+  const hasStableGutter = window.getComputedStyle(document.documentElement)
+    .scrollbarGutter.split(" ").includes("stable");
   const widthBeforeLock = document.documentElement.clientWidth;
   document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
-  const layoutShift = Math.max(0, document.documentElement.clientWidth - widthBeforeLock);
-  if (layoutShift > 0) {
-    const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
-    document.body.style.paddingRight = `${paddingRight + layoutShift}px`;
+  if (!hasStableGutter) {
+    const layoutShift = Math.max(0, document.documentElement.clientWidth - widthBeforeLock);
+    if (layoutShift > 0) {
+      const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+      document.body.style.paddingRight = `${paddingRight + layoutShift}px`;
+    }
   }
 }
 
