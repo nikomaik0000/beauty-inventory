@@ -41,7 +41,6 @@ export function ProductDetailDialog({
       maxWidthClassName="max-w-lg"
       maxHeightClassName="max-h-[85dvh]"
       viewportPaddingClassName="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]"
-      animated={false}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
           <ProductActionsMenu product={product} onDeleted={onClose} />

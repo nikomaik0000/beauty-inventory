@@ -1,17 +1,13 @@
 "use client";
 
-import { type ReactNode, type Ref, useEffect, useLayoutEffect, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { type ReactNode, type Ref, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { animation } from "@/lib/design-system";
 
 /**
- * Shared centered modal — dimmed backdrop, always capped to the
- * viewport, same popup animation on every use. FilterPanel used to
- * build this chrome by hand; this is that markup lifted out so any
- * future dialog (and any tweak to how dialogs animate/look) lives in
- * one place.
+ * Shared centered modal — dimmed backdrop, viewport-capped panel, nested
+ * focus handling, and reference-counted background scroll locking.
  */
 export function Dialog({
   open,
@@ -25,7 +21,6 @@ export function Dialog({
   backdropClassName = "bg-black/50",
   frameClassName: customFrameClassName,
   bodyClassName,
-  animated = true,
   contentRef,
 }: {
   open: boolean;
@@ -39,39 +34,65 @@ export function Dialog({
   backdropClassName?: string;
   frameClassName?: string;
   bodyClassName?: string;
-  animated?: boolean;
   /** Ref to the scrollable body — lets a caller (e.g. FilterPanel) use
    * it as a boundary so its own dropdowns never render past the
    * footer. Optional; nothing changes for callers that don't pass it. */
   contentRef?: Ref<HTMLDivElement>;
 }) {
   const dialogId = useRef(Symbol("dialog"));
+  const frameRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const reduceMotion = useReducedMotion();
-  const fadeTransition = {
-    duration: reduceMotion ? 0 : animation.motion.base,
-    ease: animation.motion.ease,
-  };
+  const onCloseRef = useRef(onClose);
+  const [portalReady, setPortalReady] = useState(false);
 
-  // Escape closes the dialog, same as clicking the backdrop or the × —
-  // standard dialog behavior, not a new interaction. A nested open
-  // dropdown handles its own Escape first and stops it from bubbling
-  // here, so closing a dropdown and closing the dialog stay two
-  // separate key presses.
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Hydrate in place, then move the overlay to body before the first browser
+  // paint. Portaling keeps nested dialogs out of transformed/overflow-hidden
+  // ancestors without creating a server/client markup mismatch.
+  useLayoutEffect(() => {
+    setPortalReady(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const currentDialogId = dialogId.current;
     dialogStack.push(currentDialogId);
+
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && dialogStack.at(-1) === currentDialogId) onClose();
+      if (dialogStack.at(-1) !== currentDialogId) return;
+      if (e.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const focusable = getFocusableElements(frameRef.current);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        closeButtonRef.current?.focus({ preventScroll: true });
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable.at(-1)!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus({ preventScroll: true });
+      }
     }
+
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       const index = dialogStack.lastIndexOf(currentDialogId);
       if (index >= 0) dialogStack.splice(index, 1);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -128,54 +149,24 @@ export function Dialog({
     </>
   );
 
-  if (!animated) {
-    if (!open) return null;
-    return (
-      <div className={frameClassName}>
-        <button
-          type="button"
-          aria-label={`關閉${title}`}
-          onClick={onClose}
-          className={backdropClass}
-        />
-        <div role="dialog" aria-modal="true" aria-label={title} className={panelClassName}>
-          {panelContents}
-        </div>
+  if (!open) return null;
+
+  const dialog = (
+    <div ref={frameRef} className={frameClassName}>
+      <button
+        type="button"
+        aria-label={`關閉${title}`}
+        onClick={onClose}
+        className={backdropClass}
+        tabIndex={-1}
+      />
+      <div role="dialog" aria-modal="true" aria-label={title} className={panelClassName}>
+        {panelContents}
       </div>
-    );
-  }
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <div className={frameClassName}>
-          <motion.button
-            type="button"
-            aria-label={`關閉${title}`}
-            onClick={onClose}
-            className={backdropClass}
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={fadeTransition}
-          />
-
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={fadeTransition}
-            className={panelClassName}
-          >
-            {panelContents}
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+    </div>
   );
+
+  return portalReady ? createPortal(dialog, document.body) : dialog;
 }
 
 let bodyLockCount = 0;
@@ -195,20 +186,13 @@ function lockBodyScroll() {
     bodyPaddingRight: document.body.style.paddingRight,
   };
 
-  const scrollbarWidth = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-  const stableScrollbarGutter = typeof CSS !== "undefined"
-    && CSS.supports("scrollbar-gutter: stable");
-
-  // Lock the actual scrolling element without converting the entire body to a
-  // fixed-position layer. The former fixed/top/width rewrite caused a full
-  // page recomposite (and a visible horizontal jump) whenever the first modal
-  // opened. `scrollbar-gutter: stable` in globals.css already reserves the
-  // desktop gutter; older browsers receive the padding fallback below.
+  const widthBeforeLock = document.documentElement.clientWidth;
   document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
-  if (!stableScrollbarGutter && scrollbarWidth > 0) {
+  const layoutShift = Math.max(0, document.documentElement.clientWidth - widthBeforeLock);
+  if (layoutShift > 0) {
     const paddingRight = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
-    document.body.style.paddingRight = `${paddingRight + scrollbarWidth}px`;
+    document.body.style.paddingRight = `${paddingRight + layoutShift}px`;
   }
 }
 
@@ -219,4 +203,15 @@ function unlockBodyScroll() {
   document.body.style.overflow = bodyLockPrevious.bodyOverflow;
   document.body.style.paddingRight = bodyLockPrevious.bodyPaddingRight;
   bodyLockPrevious = null;
+}
+
+function getFocusableElements(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>(
+    'button:not([disabled]):not([tabindex="-1"]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )).filter((element) => (
+    !element.hasAttribute("hidden")
+    && element.getAttribute("aria-hidden") !== "true"
+    && element.getClientRects().length > 0
+  ));
 }

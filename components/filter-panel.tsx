@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToolbarButton } from "@/components/ui/toolbar-button";
@@ -36,13 +36,6 @@ export function FilterPanel({
   const [draft, setDraft] = useState<ProductFilters>(filters);
   const dialogBodyRef = useRef<HTMLDivElement>(null);
 
-  // Re-sync the draft to whatever is currently applied every time the
-  // modal opens, so stale edits from a previous open (that were
-  // cancelled) never resurface.
-  useEffect(() => {
-    if (open) setDraft(filters);
-  }, [open, filters]);
-
   const visibleSubcategories = draft.categoryId
     ? subcategories.filter((s) => s.category_id === draft.categoryId)
     : subcategories;
@@ -68,7 +61,12 @@ export function FilterPanel({
         active={open}
         badgeCount={activeCount}
         aria-label="篩選"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // Commit the current values before the dialog's first paint instead
+          // of correcting stale draft state in a post-paint effect.
+          setDraft(filters);
+          setOpen(true);
+        }}
       />
 
       <Dialog

@@ -2,10 +2,9 @@
 
 import { type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { animation } from "@/lib/design-system";
+import { calculateOverlayPosition } from "@/lib/overlay-position";
 
 export interface DropdownOption<T extends string> {
   value: T;
@@ -20,14 +19,10 @@ interface PopupPosition {
   maxHeight: number;
 }
 
-const POPUP_GAP = 8; // matches the previous `mt-2` visual gap
-const POPUP_MAX_HEIGHT = 288; // matches the previous `max-h-72`
-const POPUP_MIN_HEIGHT = 120; // never shrink the list below something usable
-
 /**
  * The one custom dropdown used everywhere a native `<select>` used to
- * be: same list chrome (colors, radius, typography, hover state,
- * selected-item checkmark, popup animation) no matter what the trigger
+ * be: same list chrome (colors, radius, typography, hover state and
+ * selected-item checkmark) no matter what the trigger
  * looks like. `renderTrigger` supplies the trigger itself — an
  * icon-only toolbar button, a full-width field, whatever the caller
  * needs — so this component never renders a `<button>` inside another
@@ -50,7 +45,6 @@ export function Dropdown<T extends string>({
   align = "left",
   ariaLabel,
   boundaryRef,
-  animated = true,
 }: {
   value: T;
   options: DropdownOption<T>[];
@@ -62,9 +56,6 @@ export function Dropdown<T extends string>({
    * e.g. a dialog's scrollable body, so the popup never overlaps the
    * dialog's fixed footer. Falls back to the viewport when omitted. */
   boundaryRef?: RefObject<HTMLElement | null>;
-  /** Disable popup enter/exit animation for action menus that immediately
-   * open another overlay. Positioning and appearance remain unchanged. */
-  animated?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<PopupPosition | null>(null);
@@ -77,47 +68,49 @@ export function Dropdown<T extends string>({
   const calculatePosition = useCallback((): PopupPosition | null => {
     const trigger = containerRef.current;
     if (!trigger) return null;
-    const rect = trigger.getBoundingClientRect();
-    const boundary = boundaryRef?.current?.getBoundingClientRect();
-    const viewportBottom = boundary ? Math.min(boundary.bottom, window.innerHeight) : window.innerHeight;
-    const viewportTop = boundary ? Math.max(boundary.top, 0) : 0;
-    const spaceBelow = viewportBottom - rect.bottom - POPUP_GAP;
-    const spaceAbove = rect.top - viewportTop - POPUP_GAP;
-    const openUpward = spaceBelow < POPUP_MIN_HEIGHT && spaceAbove > spaceBelow;
-
-    return {
-      left: align === "right" ? rect.right - Math.max(rect.width, 160) : rect.left,
-      width: rect.width,
-      top: openUpward ? undefined : rect.bottom + POPUP_GAP,
-      bottom: openUpward ? window.innerHeight - rect.top + POPUP_GAP : undefined,
-      maxHeight: Math.max(Math.min(POPUP_MAX_HEIGHT, openUpward ? spaceAbove : spaceBelow), POPUP_MIN_HEIGHT),
-    };
+    return calculateOverlayPosition({
+      trigger: trigger.getBoundingClientRect(),
+      boundary: boundaryRef?.current?.getBoundingClientRect(),
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      align,
+    });
   }, [align, boundaryRef]);
 
   const openPopup = useCallback(() => {
     const nextPosition = calculatePosition();
     if (!nextPosition) return;
-    // Position and visibility are committed in the same React batch, so a
-    // portaled menu is never painted once at an unset or stale coordinate.
+    const selectedIndex = options.findIndex((option) => option.value === value);
+    // Selection, position, and visibility are committed together. The portal
+    // never paints a stale highlight at an unset or previous coordinate.
+    setHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
     setPosition(nextPosition);
     setOpen(true);
-  }, [calculatePosition]);
+  }, [calculatePosition, options, value]);
 
   const togglePopup = useCallback(() => {
     if (open) setOpen(false);
     else openPopup();
   }, [open, openPopup]);
 
-  useEffect(() => {
-    if (open) {
-      const idx = options.findIndex((o) => o.value === value);
-      setHighlightedIndex(idx >= 0 ? idx : 0);
-    }
+  useLayoutEffect(() => {
+    if (!open) return;
+    const idx = options.findIndex((option) => option.value === value);
+    setHighlightedIndex(idx >= 0 ? idx : 0);
   }, [open, value, options]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
-    optionRefs.current[highlightedIndex]?.scrollIntoView({ block: "nearest" });
+    const list = listRef.current;
+    const option = optionRefs.current[highlightedIndex];
+    if (!list || !option) return;
+
+    const optionTop = option.offsetTop;
+    const optionBottom = optionTop + option.offsetHeight;
+    if (optionTop < list.scrollTop) list.scrollTop = optionTop;
+    else if (optionBottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = optionBottom - list.clientHeight;
+    }
   }, [open, highlightedIndex]);
 
   useEffect(() => {
@@ -207,8 +200,7 @@ export function Dropdown<T extends string>({
   const popupStyle = position ? {
     position: "fixed" as const,
     left: position.left,
-    width: align === "right" ? undefined : position.width,
-    minWidth: align === "right" ? Math.max(position.width, 160) : undefined,
+    width: position.width,
     top: position.top,
     bottom: position.bottom,
     maxHeight: position.maxHeight,
@@ -250,25 +242,7 @@ export function Dropdown<T extends string>({
 
       {typeof document !== "undefined" &&
         createPortal(
-          animated ? (
-            <AnimatePresence>
-              {open && position && (
-              <motion.ul
-                ref={listRef}
-                role="listbox"
-                aria-label={ariaLabel}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: animation.motion.fast, ease: animation.motion.ease }}
-                style={popupStyle}
-                className="z-50 min-w-[160px] overflow-y-auto rounded-dropdown border border-border bg-surface py-1 shadow-dropdown"
-              >
-                {popupContents}
-              </motion.ul>
-              )}
-            </AnimatePresence>
-          ) : open && position ? (
+          open && position ? (
             <ul
               ref={listRef}
               role="listbox"

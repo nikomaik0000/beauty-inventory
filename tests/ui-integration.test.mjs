@@ -17,7 +17,7 @@ test("product create and edit share a centered modal while legacy routes stay co
   assert.match(explorer, /setProductForm/);
   assert.match(modal, /max-w-\[720px\]/);
   assert.match(modal, /max-h-\[88dvh\]/);
-  assert.match(modal, /animated=\{false\}/);
+  assert.doesNotMatch(modal, /animated=/);
   assert.match(newRoute, /redirect/);
   assert.match(editRoute, /redirect/);
 });

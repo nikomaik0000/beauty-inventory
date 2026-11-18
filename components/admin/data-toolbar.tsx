@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Download, FileDown, Plus, Upload } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CsvImportDialog } from "@/components/admin/csv-import-dialog";
 import { buildProductCsv, downloadCsv, todayDateStamp } from "@/lib/csv";
 import { productToCsvRow } from "@/lib/csv-import";
 import { cn } from "@/lib/utils";
-import { animation } from "@/lib/design-system";
 import type { Category, ProductWithRelations } from "@/lib/types";
 
 const SAMPLE_CSV_ROW = [
@@ -95,15 +93,10 @@ export function DataToolbar({
             <ChevronDown size={14} strokeWidth={1.75} className={cn("transition-transform duration-base", csvMenuOpen && "rotate-180")} />
           </button>
 
-          <AnimatePresence>
-            {csvMenuOpen && (
-              <motion.div
+          {csvMenuOpen && (
+              <div
                 role="menu"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: animation.motion.fast, ease: animation.motion.ease }}
-                className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/60 bg-surface/75 p-1.5 shadow-xl shadow-black/5 backdrop-blur-xl backdrop-saturate-150"
+                className="absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-2xl border border-white/60 bg-surface p-1.5 shadow-xl shadow-black/5"
               >
                 <button
                   type="button"
@@ -141,9 +134,8 @@ export function DataToolbar({
                   <Download size={14} strokeWidth={1.75} />
                   下載範例
                 </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+          )}
         </div>
       </div>
 

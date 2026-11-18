@@ -16,7 +16,7 @@ test("product detail uses a centered safe-area modal with the shared 50% viewpor
   assert.match(detail, /safe-area-inset-top/);
   assert.match(detail, /safe-area-inset-bottom/);
   assert.match(dialog, /bg-black\/50/);
-  assert.match(detail, /animated=\{false\}/);
+  assert.match(dialog, /createPortal\(dialog, document\.body\)/);
   assert.doesNotMatch(detail, /mobileNearFullscreen/);
 });
 
@@ -30,42 +30,43 @@ test("dialog keeps header and footer outside its scrollable content and restores
   assert.match(dialog, /document\.documentElement\.style\.overflow = "hidden"/);
   assert.match(dialog, /document\.body\.style\.overflow = "hidden"/);
   assert.match(dialog, /useLayoutEffect/);
-  assert.match(dialog, /scrollbarWidth/);
-  assert.match(dialog, /CSS\.supports\("scrollbar-gutter: stable"\)/);
+  assert.match(dialog, /widthBeforeLock/);
+  assert.match(dialog, /layoutShift/);
   assert.doesNotMatch(dialog, /document\.body\.style\.position = "fixed"/);
   assert.doesNotMatch(dialog, /window\.scrollTo\(0, bodyLockScrollY\)/);
   assert.match(dialog, /bodyLockCount/);
   assert.match(dialog, /previouslyFocused\.focus\(\{ preventScroll: true \}\)/);
 });
 
-test("product action menu is positioned before paint and closes without an exit overlay", async () => {
-  const [dropdown, menu] = await Promise.all([
+test("shared dropdown positions and highlights before paint without a lingering exit overlay", async () => {
+  const [dropdown, menu, sort, filter] = await Promise.all([
     source("../components/ui/dropdown.tsx"),
     source("../components/product-actions-menu.tsx"),
+    source("../components/sort-menu.tsx"),
+    source("../components/filter-panel.tsx"),
   ]);
 
   assert.match(dropdown, /const nextPosition = calculatePosition\(\)/);
+  assert.ok(dropdown.indexOf("setHighlightedIndex") < dropdown.indexOf("setOpen(true)"));
   assert.ok(dropdown.indexOf("setPosition(nextPosition)") < dropdown.indexOf("setOpen(true)"));
-  assert.match(dropdown, /animated \? \(/);
-  assert.match(menu, /animated=\{false\}/);
+  assert.doesNotMatch(dropdown, /scrollIntoView|AnimatePresence|motion\./);
+  assert.match(dropdown, /list\.scrollTop/);
   assert.match(menu, /PRODUCT_ACTION_OPTIONS/);
+  assert.match(sort, /<Dropdown/);
+  assert.doesNotMatch(sort, /AnimatePresence|motion\.|position: "absolute"/);
+  assert.ok(filter.indexOf("setDraft(filters)") < filter.indexOf("setOpen(true)"));
 });
 
-test("dialog uses a coordinated opacity-only fade and respects reduced motion", async () => {
+test("dialog portals once and keeps nested focus and Escape handling on the top layer", async () => {
   const dialog = await source("../components/ui/dialog.tsx");
 
-  assert.match(dialog, /useReducedMotion/);
-  assert.match(dialog, /duration: reduceMotion \? 0 : animation\.motion\.base/);
-  assert.doesNotMatch(dialog, /initial=\{\{[^}]*\b(?:x|y|scale):/);
-  assert.doesNotMatch(dialog, /animate=\{\{[^}]*\b(?:x|y|scale):/);
-});
-
-test("product detail can bypass Framer Motion and AnimatePresence entirely", async () => {
-  const dialog = await source("../components/ui/dialog.tsx");
-
-  assert.match(dialog, /if \(!animated\)/);
+  assert.match(dialog, /portalReady \? createPortal\(dialog, document\.body\)/);
+  assert.match(dialog, /dialogStack\.at\(-1\) !== currentDialogId/);
+  assert.match(dialog, /onCloseRef\.current\(\)/);
+  assert.match(dialog, /getFocusableElements/);
+  assert.match(dialog, /e\.key !== "Tab"/);
+  assert.doesNotMatch(dialog, /AnimatePresence|motion\.|useReducedMotion/);
   assert.match(dialog, /if \(!open\) return null/);
-  assert.match(dialog, /<div role="dialog"/);
 });
 
 test("PAO displays months only for a positive integer", async () => {

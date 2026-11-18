@@ -60,7 +60,6 @@ export function ProductActionsMenu({
         ariaLabel={`${product.name} 操作`}
         align="right"
         options={PRODUCT_ACTION_OPTIONS}
-        animated={false}
         onChange={handleAction}
         renderTrigger={({ open, toggle }) => (
           <button
